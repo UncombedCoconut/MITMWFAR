@@ -35,13 +35,9 @@ func TestTypes(t *testing.T) {
 func TestVerifyValidTM(t *testing.T) {
 	t.Run("NoStates", func(t *testing.T) {
 		tm := turingMachine{
-			states:  0,
-			symbols: 2,
-			transitions: map[tmState]map[symbol]struct {
-				symbol
-				direction
-				tmState
-			}{},
+			states:      0,
+			symbols:     2,
+			transitions: map[tmState]map[symbol]tmTransition{},
 		}
 		if verifyValidTM(tm) {
 			t.Fail()
@@ -49,13 +45,9 @@ func TestVerifyValidTM(t *testing.T) {
 	})
 	t.Run("NoSymbols", func(t *testing.T) {
 		tm := turingMachine{
-			states:  2,
-			symbols: 0,
-			transitions: map[tmState]map[symbol]struct {
-				symbol
-				direction
-				tmState
-			}{},
+			states:      2,
+			symbols:     0,
+			transitions: map[tmState]map[symbol]tmTransition{},
 		}
 		if verifyValidTM(tm) {
 			t.Fail()
@@ -65,11 +57,7 @@ func TestVerifyValidTM(t *testing.T) {
 		tm := turingMachine{
 			states:  2,
 			symbols: 2,
-			transitions: map[tmState]map[symbol]struct {
-				symbol
-				direction
-				tmState
-			}{
+			transitions: map[tmState]map[symbol]tmTransition{
 				A: {0: {1, R, B},
 					1: {1, L, B}},
 				B: {0: {1, L, A},
@@ -85,13 +73,10 @@ func TestVerifyValidTM(t *testing.T) {
 func TestVerifyDeterministic(t *testing.T) {
 	t.Run("NoStates", func(t *testing.T) {
 		wfa := dwfa{
-			states:     0,
-			symbols:    1,
-			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{},
+			states:      0,
+			symbols:     1,
+			startState:  0,
+			transitions: map[wfaState]map[symbol]wfaTransition{},
 		}
 		if verifyDeterministicWFA(wfa) {
 			t.Fail()
@@ -99,13 +84,10 @@ func TestVerifyDeterministic(t *testing.T) {
 	})
 	t.Run("NoSymbols", func(t *testing.T) {
 		wfa := dwfa{
-			states:     1,
-			symbols:    0,
-			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{},
+			states:      1,
+			symbols:     0,
+			startState:  0,
+			transitions: map[wfaState]map[symbol]wfaTransition{},
 		}
 		if verifyDeterministicWFA(wfa) {
 			t.Fail()
@@ -113,13 +95,10 @@ func TestVerifyDeterministic(t *testing.T) {
 	})
 	t.Run("OutOfBoundStart", func(t *testing.T) {
 		wfa := dwfa{
-			states:     1,
-			symbols:    1,
-			startState: 1,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{},
+			states:      1,
+			symbols:     1,
+			startState:  1,
+			transitions: map[wfaState]map[symbol]wfaTransition{},
 		}
 		if verifyDeterministicWFA(wfa) {
 			t.Fail()
@@ -127,13 +106,10 @@ func TestVerifyDeterministic(t *testing.T) {
 	})
 	t.Run("IncompleteTransitionStateMap", func(t *testing.T) {
 		wfa := dwfa{
-			states:     2,
-			symbols:    2,
-			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{0: {0: {0, 0}, 1: {0, 0}}},
+			states:      2,
+			symbols:     2,
+			startState:  0,
+			transitions: map[wfaState]map[symbol]wfaTransition{0: {0: {0, 0}, 1: {0, 0}}},
 		}
 		if verifyDeterministicWFA(wfa) {
 			t.Fail()
@@ -144,10 +120,7 @@ func TestVerifyDeterministic(t *testing.T) {
 			states:     2,
 			symbols:    2,
 			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{
+			transitions: map[wfaState]map[symbol]wfaTransition{
 				0: {0: {0, 0},
 					1: {0, 0}},
 				1: {0: {0, 0}}},
@@ -161,10 +134,7 @@ func TestVerifyDeterministic(t *testing.T) {
 			states:     2,
 			symbols:    2,
 			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{
+			transitions: map[wfaState]map[symbol]wfaTransition{
 				0: {0: {0, 0},
 					1: {1, 0}},
 				1: {0: {0, 0},
@@ -179,10 +149,7 @@ func TestVerifyDeterministic(t *testing.T) {
 			states:     2,
 			symbols:    2,
 			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{
+			transitions: map[wfaState]map[symbol]wfaTransition{
 				0: {0: {0, 1},
 					1: {1, 0}},
 				1: {0: {1, 2},
@@ -224,13 +191,10 @@ func TestVerifySymbolCompatibility(t *testing.T) {
 func TestVerifyLeadingBlankInvariant(t *testing.T) {
 	t.Run("WrongTransitionState", func(t *testing.T) {
 		wfa := dwfa{
-			states:     2,
-			symbols:    2,
-			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{0: {0: {1, 0}}},
+			states:      2,
+			symbols:     2,
+			startState:  0,
+			transitions: map[wfaState]map[symbol]wfaTransition{0: {0: {1, 0}}},
 		}
 		if verifyLeadingBlankInvariant(wfa) {
 			t.Fail()
@@ -238,13 +202,10 @@ func TestVerifyLeadingBlankInvariant(t *testing.T) {
 	})
 	t.Run("WrongTransitionWeight", func(t *testing.T) {
 		wfa := dwfa{
-			states:     2,
-			symbols:    2,
-			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{0: {0: {0, 1}}},
+			states:      2,
+			symbols:     2,
+			startState:  0,
+			transitions: map[wfaState]map[symbol]wfaTransition{0: {0: {0, 1}}},
 		}
 		if verifyLeadingBlankInvariant(wfa) {
 			t.Fail()
@@ -252,13 +213,10 @@ func TestVerifyLeadingBlankInvariant(t *testing.T) {
 	})
 	t.Run("WrongStartState", func(t *testing.T) {
 		wfa := dwfa{
-			states:     2,
-			symbols:    2,
-			startState: 1,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{0: {0: {0, 0}}},
+			states:      2,
+			symbols:     2,
+			startState:  1,
+			transitions: map[wfaState]map[symbol]wfaTransition{0: {0: {0, 0}}},
 		}
 		if verifyLeadingBlankInvariant(wfa) {
 			t.Fail()
@@ -266,13 +224,10 @@ func TestVerifyLeadingBlankInvariant(t *testing.T) {
 	})
 	t.Run("CorrectTransition", func(t *testing.T) {
 		wfa := dwfa{
-			states:     2,
-			symbols:    2,
-			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{0: {0: {0, 0}}},
+			states:      2,
+			symbols:     2,
+			startState:  0,
+			transitions: map[wfaState]map[symbol]wfaTransition{0: {0: {0, 0}}},
 		}
 		if !verifyLeadingBlankInvariant(wfa) {
 			t.Fail()
@@ -280,13 +235,10 @@ func TestVerifyLeadingBlankInvariant(t *testing.T) {
 	})
 	t.Run("CorrectTransitionAlternateStart", func(t *testing.T) {
 		wfa := dwfa{
-			states:     2,
-			symbols:    2,
-			startState: 1,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{1: {0: {1, 0}}},
+			states:      2,
+			symbols:     2,
+			startState:  1,
+			transitions: map[wfaState]map[symbol]wfaTransition{1: {0: {1, 0}}},
 		}
 		if !verifyLeadingBlankInvariant(wfa) {
 			t.Fail()
@@ -304,10 +256,7 @@ func TestVerifySpecialSets(t *testing.T) {
 			states:     4,
 			symbols:    2,
 			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{
+			transitions: map[wfaState]map[symbol]wfaTransition{
 				0: {0: {0, 0},
 					1: {1, 1}},
 				1: {0: {2, -1},
@@ -331,10 +280,7 @@ func TestVerifySpecialSets(t *testing.T) {
 			states:     4,
 			symbols:    2,
 			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{
+			transitions: map[wfaState]map[symbol]wfaTransition{
 				0: {0: {0, 0},
 					1: {1, 0}},
 				1: {0: {2, 0},
@@ -358,10 +304,7 @@ func TestVerifySpecialSets(t *testing.T) {
 			states:     4,
 			symbols:    2,
 			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{
+			transitions: map[wfaState]map[symbol]wfaTransition{
 				0: {0: {0, 0},
 					1: {1, 0}},
 				1: {0: {2, -1},
@@ -385,10 +328,7 @@ func TestVerifySpecialSets(t *testing.T) {
 			states:     4,
 			symbols:    2,
 			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{
+			transitions: map[wfaState]map[symbol]wfaTransition{
 				0: {0: {0, 0},
 					1: {1, 1}},
 				1: {0: {2, -1},
@@ -412,10 +352,7 @@ func TestVerifySpecialSets(t *testing.T) {
 			states:     4,
 			symbols:    2,
 			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{
+			transitions: map[wfaState]map[symbol]wfaTransition{
 				0: {0: {0, 0},
 					1: {1, -1}},
 				1: {0: {2, -1},
@@ -439,10 +376,7 @@ func TestVerifySpecialSets(t *testing.T) {
 			states:     4,
 			symbols:    2,
 			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{
+			transitions: map[wfaState]map[symbol]wfaTransition{
 				0: {0: {0, 0},
 					1: {1, 0}},
 				1: {0: {2, 0},
@@ -466,10 +400,7 @@ func TestVerifySpecialSets(t *testing.T) {
 			states:     4,
 			symbols:    2,
 			startState: 0,
-			transitions: map[wfaState]map[symbol]struct {
-				wfaState
-				weight
-			}{
+			transitions: map[wfaState]map[symbol]wfaTransition{
 				0: {0: {0, 0},
 					1: {1, 0}},
 				1: {0: {2, 0},
@@ -481,6 +412,165 @@ func TestVerifySpecialSets(t *testing.T) {
 			},
 		}
 		if verifySpecialSets(wfa, specialSets) {
+			t.Fail()
+		}
+	})
+}
+
+func TestVerifyStartConfigAccept(t *testing.T) {
+	t.Run("MissingConfig", func(t *testing.T) {
+		leftWFA := dwfa{startState: 0}
+		rightWFA := dwfa{startState: 0}
+		acceptSet := map[config]condition{}
+		if verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("FailedEqualCondition", func(t *testing.T) {
+		leftWFA := dwfa{startState: 0}
+		rightWFA := dwfa{startState: 0}
+		acceptSet := map[config]condition{{TMSTARTSTATE, TMSTARTSYMBOL, 0, 0}: {EQUAL, 1}}
+		if verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectEqualCondition", func(t *testing.T) {
+		leftWFA := dwfa{startState: 0}
+		rightWFA := dwfa{startState: 0}
+		acceptSet := map[config]condition{{TMSTARTSTATE, TMSTARTSYMBOL, 0, 0}: {EQUAL, 0}}
+		if !verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("FailedMoreCondition", func(t *testing.T) {
+		leftWFA := dwfa{startState: 0}
+		rightWFA := dwfa{startState: 0}
+		acceptSet := map[config]condition{{TMSTARTSTATE, TMSTARTSYMBOL, 0, 0}: {MOREOREQUAL, 1}}
+		if verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectMoreCondition", func(t *testing.T) {
+		leftWFA := dwfa{startState: 0}
+		rightWFA := dwfa{startState: 0}
+		acceptSet := map[config]condition{{TMSTARTSTATE, TMSTARTSYMBOL, 0, 0}: {MOREOREQUAL, -1}}
+		if !verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectMoreConditionAtEqual", func(t *testing.T) {
+		leftWFA := dwfa{startState: 0}
+		rightWFA := dwfa{startState: 0}
+		acceptSet := map[config]condition{{TMSTARTSTATE, TMSTARTSYMBOL, 0, 0}: {MOREOREQUAL, 0}}
+		if !verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("FailedLessCondition", func(t *testing.T) {
+		leftWFA := dwfa{startState: 0}
+		rightWFA := dwfa{startState: 0}
+		acceptSet := map[config]condition{{TMSTARTSTATE, TMSTARTSYMBOL, 0, 0}: {LESSOREQUAL, -1}}
+		if verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectLessCondition", func(t *testing.T) {
+		leftWFA := dwfa{startState: 0}
+		rightWFA := dwfa{startState: 0}
+		acceptSet := map[config]condition{{TMSTARTSTATE, TMSTARTSYMBOL, 0, 0}: {LESSOREQUAL, 1}}
+		if !verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectLessConditionAtEqual", func(t *testing.T) {
+		leftWFA := dwfa{startState: 0}
+		rightWFA := dwfa{startState: 0}
+		acceptSet := map[config]condition{{TMSTARTSTATE, TMSTARTSYMBOL, 0, 0}: {LESSOREQUAL, 0}}
+		if !verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectAllCondition", func(t *testing.T) {
+		leftWFA := dwfa{startState: 0}
+		rightWFA := dwfa{startState: 0}
+		acceptSet := map[config]condition{{TMSTARTSTATE, TMSTARTSYMBOL, 0, 0}: {ACCEPTALL, 42}}
+		if !verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) {
+			t.Fail()
+		}
+	})
+}
+
+func TestVerifyNoHaltingConfigAccepted(t *testing.T) {
+	t.Run("OutOfBoundAcceptConfig", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, B}},
+				B: {0: {1, L, A},
+					1: {1, R, Z}},
+			},
+		}
+		acceptSet := map[config]condition{
+			{C, 0, 0, 0}: {EQUAL, 0},
+		}
+		if verifyNoHaltingConfigAccepted(tm, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("AcceptHalting", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, B}},
+				B: {0: {1, L, A},
+					1: {1, R, Z}},
+			},
+		}
+		acceptSet := map[config]condition{
+			{B, 1, 0, 0}: {EQUAL, 0},
+		}
+		if verifyNoHaltingConfigAccepted(tm, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("AcceptUndef", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, B}},
+				B: {0: {1, L, A}},
+			},
+		}
+		acceptSet := map[config]condition{
+			{B, 1, 0, 0}: {EQUAL, 0},
+		}
+		if verifyNoHaltingConfigAccepted(tm, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("AcceptCorrect", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, B}},
+				B: {0: {1, L, A},
+					1: {1, R, Z}},
+			},
+		}
+		acceptSet := map[config]condition{
+			{A, 0, 0, 0}: {EQUAL, 0},
+			{A, 1, 0, 0}: {EQUAL, 0},
+			{B, 0, 0, 0}: {EQUAL, 0},
+		}
+		if !verifyNoHaltingConfigAccepted(tm, acceptSet) {
 			t.Fail()
 		}
 	})
