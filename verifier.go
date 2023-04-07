@@ -12,6 +12,16 @@ type wfaTransition struct {
 	weight
 }
 type weight int
+
+const MAXINT = int(^uint(0) >> 2)
+const MININT = -MAXINT - 1
+
+func check(w weight) {
+	if int(w) > MAXINT || int(w) < MININT {
+		panic("possible integer overflow detected")
+	}
+}
+
 type specialSets struct {
 	nonNegative map[wfaState]struct{}
 	nonPositive map[wfaState]struct{}
@@ -64,7 +74,7 @@ func (tms tmState) String() string {
 	return string(byte(tms) + 'A')
 }
 
-type acceptSet map[config]condition
+type acceptSet map[config]bounds
 
 type config struct {
 	tmState    tmState
@@ -73,35 +83,51 @@ type config struct {
 	rightState wfaState
 }
 
-type condition struct {
-	mode
-	weight
-}
+type bounds map[boundType]weight
 
-type mode int
+type boundType bool
 
-const EQUAL mode = 0
-const MOREOREQUAL mode = 1
-const LESSOREQUAL mode = 2
-const ACCEPTALL mode = 4
+const LOWER boundType = false
+const UPPER boundType = true
 
 func MITMWFARverifier(tm turingMachine, leftWFA, rightWFA dwfa, leftSpecialSets, rightSpecialSets specialSets, acceptSet acceptSet) bool {
-	return verifyValidTM(tm) &&
-		verifyDeterministicWFA(leftWFA) &&
-		verifyDeterministicWFA(rightWFA) &&
-		verifySymbolCompatibility(tm, leftWFA, rightWFA) &&
+	return verifyCoherentDefinitions(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) &&
 		verifyLeadingBlankInvariant(leftWFA) &&
 		verifyLeadingBlankInvariant(rightWFA) &&
-		verifySpecialSets(leftWFA, leftSpecialSets) &&
-		verifySpecialSets(rightWFA, rightSpecialSets) &&
+		verifySpecialSetsHaveClaimedProperty(leftWFA, leftSpecialSets) &&
+		verifySpecialSetsHaveClaimedProperty(rightWFA, rightSpecialSets) &&
 		verifyStartConfigAccept(leftWFA, rightWFA, acceptSet) &&
 		verifyNoHaltingConfigAccepted(tm, acceptSet) &&
 		verifyForwardClosed(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet)
 }
 
+func verifyCoherentDefinitions(tm turingMachine, leftWFA, rightWFA dwfa, leftSpecialSets, rightSpecialSets specialSets, acceptSet acceptSet) bool {
+	return verifyValidTM(tm) &&
+		verifyDeterministicWFA(leftWFA) &&
+		verifyDeterministicWFA(rightWFA) &&
+		verifySymbolCompatibility(tm, leftWFA, rightWFA) &&
+		verifySpecialSetsAreSubsets(leftWFA, leftSpecialSets) &&
+		verifySpecialSetsAreSubsets(rightWFA, rightSpecialSets) &&
+		verifyAcceptSetIsValid(tm, leftWFA, rightWFA, acceptSet)
+}
+
 func verifyValidTM(tm turingMachine) bool {
 	if tm.states <= 0 || tm.symbols <= 0 {
 		return false
+	}
+	for state, symbolTransitions := range tm.transitions {
+		if int(state) < 0 || int(state) >= tm.states {
+			return false
+		}
+		for symbol, transition := range symbolTransitions {
+			if int(symbol) < 0 || int(symbol) >= tm.symbols {
+				return false
+			}
+			writeSymbol := transition.symbol
+			if int(writeSymbol) < 0 || int(writeSymbol) >= tm.symbols {
+				return false
+			}
+		}
 	}
 	return true
 }
@@ -124,11 +150,69 @@ func verifyDeterministicWFA(wfa dwfa) bool {
 			}
 		}
 	}
+	for state, symbolTransitions := range wfa.transitions {
+		if int(state) < 0 || int(state) >= wfa.states {
+			return false
+		}
+		for symbol, transition := range symbolTransitions {
+			if int(symbol) < 0 || int(symbol) >= wfa.symbols {
+				return false
+			}
+			targetState := transition.wfaState
+			if int(targetState) < 0 || int(targetState) >= wfa.symbols {
+				return false
+			}
+			check(transition.weight)
+		}
+	}
 	return true
 }
 
 func verifySymbolCompatibility(tm turingMachine, leftWFA, rightWFA dwfa) bool {
 	return tm.symbols == leftWFA.symbols && tm.symbols == rightWFA.symbols
+}
+
+func verifySpecialSetsAreSubsets(wfa dwfa, specialSets specialSets) bool {
+	for state := range specialSets.nonNegative {
+		if int(state) < 0 || int(state) >= wfa.states {
+			return false
+		}
+	}
+	for state := range specialSets.nonPositive {
+		if int(state) < 0 || int(state) >= wfa.states {
+			return false
+		}
+	}
+	return true
+}
+
+func verifyAcceptSetIsValid(tm turingMachine, leftWFA, rightWFA dwfa, acceptSet acceptSet) bool {
+	for config, bounds := range acceptSet {
+		if int(config.tmState) < 0 || int(config.tmState) >= tm.states {
+			return false
+		}
+		if int(config.tmSymbol) < 0 || int(config.tmSymbol) >= tm.symbols {
+			return false
+		}
+		if int(config.leftState) < 0 || int(config.leftState) >= leftWFA.states {
+			return false
+		}
+		if int(config.rightState) < 0 || int(config.rightState) >= rightWFA.states {
+			return false
+		}
+		lowerbound, lowerExists := bounds[LOWER]
+		if lowerExists {
+			check(lowerbound)
+		}
+		upperbound, upperExists := bounds[UPPER]
+		if upperExists {
+			check(upperbound)
+		}
+		if lowerExists && upperExists && lowerbound > upperbound {
+			return false
+		}
+	}
+	return true
 }
 
 func verifyLeadingBlankInvariant(wfa dwfa) bool {
@@ -137,7 +221,7 @@ func verifyLeadingBlankInvariant(wfa dwfa) bool {
 	return transition.wfaState == state && transition.weight == 0
 }
 
-func verifySpecialSets(wfa dwfa, specialSets specialSets) bool {
+func verifySpecialSetsHaveClaimedProperty(wfa dwfa, specialSets specialSets) bool {
 	for i := 0; i < wfa.states; i++ {
 		for j := 0; j < wfa.symbols; j++ {
 			transition := wfa.transitions[wfaState(i)][symbol(j)]
@@ -177,21 +261,17 @@ func transitionRetainsSpecialSets(startState, endState wfaState, weight weight, 
 }
 
 func verifyStartConfigAccept(leftWFA, rightWFA dwfa, acceptSet acceptSet) bool {
-	condition, ok := acceptSet[config{TMSTARTSTATE, TMSTARTSYMBOL, leftWFA.startState, rightWFA.startState}]
+	bounds, ok := acceptSet[config{TMSTARTSTATE, TMSTARTSYMBOL, leftWFA.startState, rightWFA.startState}]
 	if !ok {
 		return false
 	}
-	switch condition.mode {
-	case EQUAL:
-		return condition.weight == 0
-	case LESSOREQUAL:
-		return condition.weight >= 0
-	case MOREOREQUAL:
-		return condition.weight <= 0
-	case ACCEPTALL:
-		return true
+	if lowerbound, ok := bounds[LOWER]; ok && lowerbound > 0 {
+		return false
 	}
-	return false
+	if upperbound, ok := bounds[UPPER]; ok && upperbound < 0 {
+		return false
+	}
+	return true
 }
 
 func verifyNoHaltingConfigAccepted(tm turingMachine, acceptSet acceptSet) bool {
