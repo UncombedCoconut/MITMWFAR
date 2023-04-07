@@ -90,6 +90,11 @@ type boundType bool
 const LOWER boundType = false
 const UPPER boundType = true
 
+type configWithWeight struct {
+	config
+	weight
+}
+
 func MITMWFARverifier(tm turingMachine, leftWFA, rightWFA dwfa, leftSpecialSets, rightSpecialSets specialSets, acceptSet acceptSet) bool {
 	return verifyCoherentDefinitions(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) &&
 		verifyLeadingBlankInvariant(leftWFA) &&
@@ -298,5 +303,113 @@ func haltsNextStep(tm turingMachine, tmState tmState, symbol symbol) bool {
 }
 
 func verifyForwardClosed(tm turingMachine, leftWFA, rightWFA dwfa, leftSpecialSets, rightSpecialSets specialSets, acceptSet acceptSet) bool {
-	panic("unimplemented")
+	for config, bounds := range acceptSet {
+		for _, nextConfigWithWeightChange := range nextConfigsWithWeightChange(config, tm, leftWFA, rightWFA) {
+			if !nextConfigWithWeightChangeIsAccepted(nextConfigWithWeightChange, bounds, leftSpecialSets, rightSpecialSets, acceptSet) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func nextConfigsWithWeightChange(oldConfig config, tm turingMachine, leftWFA, rightWFA dwfa) []configWithWeight {
+	result := []configWithWeight{}
+	tmTransition := tm.transitions[oldConfig.tmState][oldConfig.tmSymbol]
+	switch tmTransition.direction {
+	case L:
+		for nextLeftState, leftStateTransitions := range leftWFA.transitions {
+			for nextSymbol, leftTransition := range leftStateTransitions {
+				if leftTransition.wfaState == oldConfig.leftState {
+					rightTransition := rightWFA.transitions[oldConfig.rightState][tmTransition.symbol]
+
+					nextConfig := config{tmTransition.tmState, nextSymbol, nextLeftState, rightTransition.wfaState}
+					weightChange := rightTransition.weight - leftTransition.weight
+					check(weightChange)
+
+					result = append(result, configWithWeight{nextConfig, weightChange})
+				}
+			}
+		}
+	case R:
+		for nextRightState, rightStateTransitions := range rightWFA.transitions {
+			for nextSymbol, rightTransition := range rightStateTransitions {
+				if rightTransition.wfaState == oldConfig.rightState {
+					leftTransition := leftWFA.transitions[oldConfig.leftState][tmTransition.symbol]
+
+					nextConfig := config{tmTransition.tmState, nextSymbol, leftTransition.wfaState, nextRightState}
+					weightChange := leftTransition.weight - rightTransition.weight
+					check(weightChange)
+
+					result = append(result, configWithWeight{nextConfig, weightChange})
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+func nextConfigWithWeightChangeIsAccepted(nextConfigWithWeightChange configWithWeight, bounds bounds, leftSpecialSets, rightSpecialSets specialSets, acceptSet acceptSet) bool {
+	nextConfig := nextConfigWithWeightChange.config
+	lowerbound, lowerExists := bounds[LOWER]
+	upperbound, upperExists := bounds[UPPER]
+
+	//adjust bounds according to the change
+	if lowerExists {
+		lowerbound += nextConfigWithWeightChange.weight
+	}
+	if upperExists {
+		upperbound += nextConfigWithWeightChange.weight
+	}
+
+	//adjust bounds according to the special sets
+	_, leftStateNonNegative := leftSpecialSets.nonNegative[nextConfig.leftState]
+	_, rightStateNonNegative := rightSpecialSets.nonNegative[nextConfig.rightState]
+	if leftStateNonNegative && rightStateNonNegative {
+		if !lowerExists || lowerbound < 0 {
+			lowerExists = true
+			lowerbound = 0
+		}
+	}
+	_, leftStateNonPositive := leftSpecialSets.nonPositive[nextConfig.leftState]
+	_, rightStateNonPositive := rightSpecialSets.nonPositive[nextConfig.rightState]
+	if leftStateNonPositive && rightStateNonPositive {
+		if !upperExists || upperbound > 0 {
+			upperExists = true
+			upperbound = 0
+		}
+	}
+
+	nextBounds := map[boundType]weight{}
+	if lowerExists {
+		nextBounds[LOWER] = lowerbound
+	}
+	if upperExists {
+		nextBounds[LOWER] = upperbound
+	}
+
+	if upperExists && lowerExists && upperbound < lowerbound {
+		return true
+	}
+	return acceptSetCountainsConfigBounds(acceptSet, nextConfig, nextBounds)
+}
+
+func acceptSetCountainsConfigBounds(acceptSet acceptSet, nextConfig config, nextBounds map[boundType]weight) bool {
+	acceptBounds, ok := acceptSet[nextConfig]
+	if !ok {
+		return false
+	}
+	acceptedLower, acceptedLowerExists := acceptBounds[LOWER]
+	nextLower, nextLowerExists := nextBounds[LOWER]
+	if acceptedLowerExists && (!nextLowerExists || acceptedLower > nextLower) {
+		return false
+	}
+
+	acceptedUpper, acceptedUpperExists := acceptBounds[UPPER]
+	nextUpper, nextUpperExists := nextBounds[UPPER]
+	if acceptedUpperExists && (!nextUpperExists || acceptedUpper < nextUpper) {
+		return false
+	}
+	return true
 }

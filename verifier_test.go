@@ -745,3 +745,338 @@ func TestVerifyNoHaltingConfigAccepted(t *testing.T) {
 		}
 	})
 }
+
+func TestNextConfigsWithWeightChange(t *testing.T) {
+	t.Run("RightMove", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, B}},
+				B: {0: {1, L, A},
+					1: {1, R, Z}},
+			},
+		}
+		leftWFA := dwfa{
+			states:     2,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 1},
+					1: {1, 0}},
+				1: {0: {0, 2},
+					1: {0, -2}}},
+		}
+		rightWFA := dwfa{
+			states:     3,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 1},
+					1: {1, 0}},
+				1: {0: {1, 2},
+					1: {2, -2}},
+				2: {0: {1, -1},
+					1: {0, -2}}},
+		}
+		oldconfig := config{A, 0, 1, 1}
+		expectedResult := []configWithWeight{
+			{config{B, 1, 0, 0}, -2},
+			{config{B, 0, 0, 1}, -4},
+			{config{B, 0, 0, 2}, -1},
+		}
+
+		result := nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
+		if len(expectedResult) != len(result) {
+			t.Fail()
+		}
+	expectedLoop:
+		for _, expectedConfig := range expectedResult {
+
+			for _, resultConfig := range result {
+				if resultConfig == expectedConfig {
+					continue expectedLoop
+				}
+			}
+			t.Fail()
+		}
+	})
+	t.Run("LeftMove", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, B}},
+				B: {0: {1, L, A},
+					1: {1, R, Z}},
+			},
+		}
+		leftWFA := dwfa{
+			states:     2,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 1},
+					1: {1, 0}},
+				1: {0: {0, 2},
+					1: {0, -2}}},
+		}
+		rightWFA := dwfa{
+			states:     3,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 1},
+					1: {1, 0}},
+				1: {0: {1, 2},
+					1: {2, -2}},
+				2: {0: {1, -1},
+					1: {0, -2}}},
+		}
+		oldconfig := config{A, 1, 0, 1}
+		expectedResult := []configWithWeight{
+			{config{B, 0, 0, 2}, -3},
+			{config{B, 0, 1, 2}, -4},
+			{config{B, 1, 1, 2}, 0},
+		}
+
+		result := nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
+		if len(expectedResult) != len(result) {
+			t.Fail()
+		}
+	expectedLoop:
+		for _, expectedConfig := range expectedResult {
+
+			for _, resultConfig := range result {
+				if resultConfig == expectedConfig {
+					continue expectedLoop
+				}
+			}
+			t.Fail()
+		}
+	})
+	t.Run("OverflowLeftMove", func(t *testing.T) {
+		tm := turingMachine{
+			states:      1,
+			symbols:     1,
+			transitions: map[tmState]map[symbol]tmTransition{A: {0: {0, L, A}}},
+		}
+		leftWFA := dwfa{
+			states:      1,
+			symbols:     1,
+			startState:  0,
+			transitions: map[wfaState]map[symbol]wfaTransition{0: {0: {0, weight(MININT)}}},
+		}
+		rightWFA := dwfa{
+			states:      1,
+			symbols:     1,
+			startState:  0,
+			transitions: map[wfaState]map[symbol]wfaTransition{0: {0: {0, weight(MAXINT)}}},
+		}
+		oldconfig := config{A, 0, 0, 0}
+		defer func() {
+			if recover() == nil {
+				//nextConfigsWithWeightChange didn't panic
+				t.Fail()
+			}
+		}()
+		result := nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
+		fmt.Println(result)
+	})
+	t.Run("OverflowRightMove", func(t *testing.T) {
+		tm := turingMachine{
+			states:      1,
+			symbols:     1,
+			transitions: map[tmState]map[symbol]tmTransition{A: {0: {0, R, A}}},
+		}
+		leftWFA := dwfa{
+			states:      1,
+			symbols:     1,
+			startState:  0,
+			transitions: map[wfaState]map[symbol]wfaTransition{0: {0: {0, weight(MAXINT)}}},
+		}
+		rightWFA := dwfa{
+			states:      1,
+			symbols:     1,
+			startState:  0,
+			transitions: map[wfaState]map[symbol]wfaTransition{0: {0: {0, weight(MININT)}}},
+		}
+		oldconfig := config{A, 0, 0, 0}
+		defer func() {
+			if recover() == nil {
+				//nextConfigsWithWeightChange didn't panic
+				t.Fail()
+			}
+		}()
+		result := nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
+		fmt.Println(result)
+	})
+}
+
+func TestNextConfigsWithWeightChangeIsAccepted(t *testing.T) {
+	t.Run("FailToUpperbound", func(t *testing.T) {
+		configWithWeight := configWithWeight{config{A, 0, 0, 0}, 1}
+		bounds := bounds{}
+		leftSpecialSets := specialSets{}
+		rightSpecialSets := specialSets{}
+		acceptSet := acceptSet{{A, 0, 0, 0}: {UPPER: 0}}
+		if nextConfigWithWeightChangeIsAccepted(configWithWeight, bounds, leftSpecialSets, rightSpecialSets, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("FailToLowerbound", func(t *testing.T) {
+		configWithWeight := configWithWeight{config{A, 0, 0, 0}, 1}
+		bounds := bounds{}
+		leftSpecialSets := specialSets{}
+		rightSpecialSets := specialSets{}
+		acceptSet := acceptSet{{A, 0, 0, 0}: {LOWER: 2}}
+		if nextConfigWithWeightChangeIsAccepted(configWithWeight, bounds, leftSpecialSets, rightSpecialSets, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("Correct", func(t *testing.T) {
+		configWithWeight := configWithWeight{config{A, 0, 0, 0}, 0}
+		bounds := bounds{}
+		leftSpecialSets := specialSets{}
+		rightSpecialSets := specialSets{}
+		acceptSet := acceptSet{{A, 0, 0, 0}: {}}
+		if !nextConfigWithWeightChangeIsAccepted(configWithWeight, bounds, leftSpecialSets, rightSpecialSets, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectViaSpecialSetNonNegative", func(t *testing.T) {
+		configWithWeight := configWithWeight{config{A, 0, 0, 0}, -1}
+		bounds := bounds{}
+		leftSpecialSets := specialSets{nonNegative: map[wfaState]struct{}{0: {}}}
+		rightSpecialSets := specialSets{nonNegative: map[wfaState]struct{}{0: {}}}
+		acceptSet := acceptSet{{A, 0, 0, 0}: {LOWER: 0}}
+		if !nextConfigWithWeightChangeIsAccepted(configWithWeight, bounds, leftSpecialSets, rightSpecialSets, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectViaSpecialSetNonPositive", func(t *testing.T) {
+		configWithWeight := configWithWeight{config{A, 0, 0, 0}, 1}
+		bounds := bounds{}
+		leftSpecialSets := specialSets{nonPositive: map[wfaState]struct{}{0: {}}}
+		rightSpecialSets := specialSets{nonPositive: map[wfaState]struct{}{0: {}}}
+		acceptSet := acceptSet{{A, 0, 0, 0}: {LOWER: 0}}
+		if !nextConfigWithWeightChangeIsAccepted(configWithWeight, bounds, leftSpecialSets, rightSpecialSets, acceptSet) {
+			t.Fail()
+		}
+	})
+}
+
+func TestAcceptSetCountainsConfigBounds(t *testing.T) {
+	t.Run("ConfigNotInAcceptSetByTmState", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {},
+		}
+		config := config{B, 0, 0, 0}
+		bound := map[boundType]weight{}
+		if acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+	t.Run("ConfigNotInAcceptSetByTmSymbol", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {},
+		}
+		config := config{A, 1, 0, 0}
+		bound := map[boundType]weight{}
+		if acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+	t.Run("ConfigNotInAcceptSetByLeftState", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {},
+		}
+		config := config{A, 0, 1, 0}
+		bound := map[boundType]weight{}
+		if acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+	t.Run("ConfigNotInAcceptSetByRightState", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {},
+		}
+		config := config{A, 0, 0, 1}
+		bound := map[boundType]weight{}
+		if acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+	t.Run("LowerboundConflict", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {LOWER: 0},
+		}
+		config := config{A, 0, 0, 0}
+		bound := map[boundType]weight{LOWER: -1}
+		if acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+	t.Run("LowerboundConflictByNonExistence", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {LOWER: 0},
+		}
+		config := config{A, 0, 0, 0}
+		bound := map[boundType]weight{}
+		if acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+	t.Run("UpperboundConflict", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {UPPER: 0},
+		}
+		config := config{A, 0, 0, 0}
+		bound := map[boundType]weight{UPPER: 1}
+		if acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+	t.Run("UpperboundConflictByNonExistence", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {UPPER: 0},
+		}
+		config := config{A, 0, 0, 0}
+		bound := map[boundType]weight{}
+		if acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectWithoutBounds", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {},
+		}
+		config := config{A, 0, 0, 0}
+		bound := map[boundType]weight{}
+		if !acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectWithNextBounds", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {},
+		}
+		config := config{A, 0, 0, 0}
+		bound := map[boundType]weight{LOWER: -1, UPPER: 1}
+		if !acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectWithAcceptBounds", func(t *testing.T) {
+		acceptSet := map[config]bounds{
+			{A, 0, 0, 0}: {LOWER: -1, UPPER: 1},
+		}
+		config := config{A, 0, 0, 0}
+		bound := map[boundType]weight{LOWER: -1, UPPER: 1}
+		if !acceptSetCountainsConfigBounds(acceptSet, config, bound) {
+			t.Fail()
+		}
+	})
+}
