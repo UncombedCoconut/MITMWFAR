@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -1351,4 +1353,18 @@ func TestMITMWFARverifier(t *testing.T) {
 			t.Fail()
 		}
 	})
+}
+
+func TestParser(t *testing.T) {
+	inputString := `1RB1LA_0LA0RB
+	0,0;0,1
+	0,0;1,0_2,0;1,1_2,0;2,0
+	0_
+	0,1,2_0
+	A,0,0,0,0,-_A,1,0,0,0,-_A,0,0,1,0,-_A,1,0,1,0,-_B,0,0,0,0,-_B,1,0,0,0,-_B,1,0,1,0,-`
+
+	input := bufio.NewScanner(strings.NewReader(strings.ReplaceAll(inputString, "\t", "")))
+	if !MITMWFARverifier(parseFullCertificate(input)) {
+		t.Fail()
+	}
 }
