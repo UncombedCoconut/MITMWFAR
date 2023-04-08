@@ -164,7 +164,7 @@ func verifyDeterministicWFA(wfa dwfa) bool {
 				return false
 			}
 			targetState := transition.wfaState
-			if int(targetState) < 0 || int(targetState) >= wfa.symbols {
+			if int(targetState) < 0 || int(targetState) >= wfa.states {
 				return false
 			}
 			check(transition.weight)

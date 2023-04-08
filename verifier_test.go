@@ -1080,3 +1080,275 @@ func TestAcceptSetCountainsConfigBounds(t *testing.T) {
 		}
 	})
 }
+
+func TestMITMWFARverifier(t *testing.T) {
+	t.Run("CorrectExample", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, A}},
+				B: {0: {0, L, A},
+					1: {0, R, B}},
+			},
+		}
+		leftWFA := dwfa{
+			states:     1,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 0},
+					1: {0, 1}},
+			},
+		}
+		rightWFA := dwfa{
+			states:     3,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 0},
+					1: {1, 0}},
+				1: {0: {2, 0},
+					1: {1, 1}},
+				2: {0: {2, 0},
+					1: {2, 0}},
+			},
+		}
+		leftSpecialSets := specialSets{
+			nonNegative: map[wfaState]struct{}{0: {}},
+			nonPositive: map[wfaState]struct{}{},
+		}
+		rightSpecialSets := specialSets{
+			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}},
+			nonPositive: map[wfaState]struct{}{0: {}},
+		}
+		acceptSet := acceptSet{
+			{A, 0, 0, 0}: {LOWER: 0},
+			{A, 1, 0, 0}: {LOWER: 0},
+			{A, 0, 0, 1}: {LOWER: 0},
+			{A, 1, 0, 1}: {LOWER: 0},
+			{B, 0, 0, 0}: {LOWER: 0},
+			{B, 1, 0, 0}: {LOWER: 0},
+			{B, 1, 0, 1}: {LOWER: 0},
+		}
+		if !MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("MissingForwardClosure", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, A}},
+				B: {0: {0, L, A},
+					1: {0, R, B}},
+			},
+		}
+		leftWFA := dwfa{
+			states:     1,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 0},
+					1: {0, 1}},
+			},
+		}
+		rightWFA := dwfa{
+			states:     3,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 0},
+					1: {1, 0}},
+				1: {0: {2, 0},
+					1: {1, 1}},
+				2: {0: {2, 0},
+					1: {2, 0}},
+			},
+		}
+		leftSpecialSets := specialSets{
+			nonNegative: map[wfaState]struct{}{0: {}},
+			nonPositive: map[wfaState]struct{}{},
+		}
+		rightSpecialSets := specialSets{
+			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}},
+			nonPositive: map[wfaState]struct{}{0: {}},
+		}
+		acceptSet := acceptSet{
+			{A, 0, 0, 0}: {LOWER: 0},
+			{A, 1, 0, 0}: {LOWER: 0},
+			{A, 0, 0, 1}: {LOWER: 0},
+			{A, 1, 0, 1}: {LOWER: 0},
+			{B, 1, 0, 0}: {LOWER: 0},
+			{B, 1, 0, 1}: {LOWER: 0},
+		}
+		if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("CorrectRelyingOnSpecialSets", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, A}},
+				B: {0: {0, L, A},
+					1: {0, R, B}},
+			},
+		}
+		leftWFA := dwfa{
+			states:     1,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 0},
+					1: {0, 1}},
+			},
+		}
+		rightWFA := dwfa{
+			states:     3,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 0},
+					1: {1, 0}},
+				1: {0: {2, 0},
+					1: {1, 1}},
+				2: {0: {2, 0},
+					1: {2, 0}},
+			},
+		}
+		leftSpecialSets := specialSets{
+			nonNegative: map[wfaState]struct{}{0: {}},
+			nonPositive: map[wfaState]struct{}{},
+		}
+		rightSpecialSets := specialSets{
+			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}},
+			nonPositive: map[wfaState]struct{}{0: {}},
+		}
+		acceptSet := acceptSet{
+			{A, 0, 0, 0}: {LOWER: 0},
+			{A, 1, 0, 0}: {LOWER: 0},
+			{A, 0, 0, 1}: {},
+			{A, 1, 0, 1}: {},
+			{B, 0, 0, 0}: {},
+			{B, 1, 0, 0}: {LOWER: 0},
+			{B, 1, 0, 1}: {LOWER: 0},
+		}
+		if !MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("WrongBecauseIncompleteSpecialSets", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, A}},
+				B: {0: {0, L, A},
+					1: {0, R, B}},
+			},
+		}
+		leftWFA := dwfa{
+			states:     1,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 0},
+					1: {0, 1}},
+			},
+		}
+		rightWFA := dwfa{
+			states:     3,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 0},
+					1: {1, 0}},
+				1: {0: {2, 0},
+					1: {1, 1}},
+				2: {0: {2, 0},
+					1: {2, 0}},
+			},
+		}
+		leftSpecialSets := specialSets{
+			nonNegative: map[wfaState]struct{}{},
+			nonPositive: map[wfaState]struct{}{},
+		}
+		rightSpecialSets := specialSets{
+			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}},
+			nonPositive: map[wfaState]struct{}{0: {}},
+		}
+		acceptSet := acceptSet{
+			{A, 0, 0, 0}: {LOWER: 0},
+			{A, 1, 0, 0}: {LOWER: 0},
+			{A, 0, 0, 1}: {},
+			{A, 1, 0, 1}: {},
+			{B, 0, 0, 0}: {},
+			{B, 1, 0, 0}: {LOWER: 0},
+			{B, 1, 0, 1}: {LOWER: 0},
+		}
+		if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) {
+			t.Fail()
+		}
+	})
+	t.Run("WrongBound", func(t *testing.T) {
+		tm := turingMachine{
+			states:  2,
+			symbols: 2,
+			transitions: map[tmState]map[symbol]tmTransition{
+				A: {0: {1, R, B},
+					1: {1, L, A}},
+				B: {0: {0, L, A},
+					1: {0, R, B}},
+			},
+		}
+		leftWFA := dwfa{
+			states:     1,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 0},
+					1: {0, 1}},
+			},
+		}
+		rightWFA := dwfa{
+			states:     3,
+			symbols:    2,
+			startState: 0,
+			transitions: map[wfaState]map[symbol]wfaTransition{
+				0: {0: {0, 0},
+					1: {1, 0}},
+				1: {0: {2, 0},
+					1: {1, 1}},
+				2: {0: {2, 0},
+					1: {2, 0}},
+			},
+		}
+		leftSpecialSets := specialSets{
+			nonNegative: map[wfaState]struct{}{0: {}},
+			nonPositive: map[wfaState]struct{}{},
+		}
+		rightSpecialSets := specialSets{
+			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}},
+			nonPositive: map[wfaState]struct{}{0: {}},
+		}
+		acceptSet := acceptSet{
+			{A, 0, 0, 0}: {LOWER: 0, UPPER: 10},
+			{A, 1, 0, 0}: {LOWER: 0, UPPER: 10},
+			{A, 0, 0, 1}: {LOWER: 0, UPPER: 10},
+			{A, 1, 0, 1}: {LOWER: 0, UPPER: 10},
+			{B, 0, 0, 0}: {LOWER: 0, UPPER: 10},
+			{B, 1, 0, 0}: {LOWER: 0, UPPER: 10},
+			{B, 1, 0, 1}: {LOWER: 0, UPPER: 10},
+		}
+		if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) {
+			t.Fail()
+		}
+	})
+}
