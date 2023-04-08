@@ -24,6 +24,20 @@ func parseFullCertificate(input *bufio.Scanner) (turingMachine, dwfa, dwfa, spec
 	return tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet
 }
 
+func parseShortCertificate(input *bufio.Scanner) (turingMachine, dwfa, dwfa, specialSets, specialSets, acceptSet) {
+	input.Scan()
+	tm := parseTM(input.Text())
+	input.Scan()
+	leftWFA := parseWFA(input.Text())
+	input.Scan()
+	rightWFA := parseWFA(input.Text())
+	leftSpecialSets := deriveSpecialSets(leftWFA)
+	rightSpecialSets := deriveSpecialSets(rightWFA)
+	acceptSet := findAcceptSet(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets)
+
+	return tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet
+}
+
 //standard text format
 func parseTM(s string) turingMachine {
 	stateStrings := strings.Split(s, "_")

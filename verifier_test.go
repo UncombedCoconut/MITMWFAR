@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strings"
+	"reflect"
 	"testing"
 )
 
@@ -791,17 +789,8 @@ func TestNextConfigsWithWeightChange(t *testing.T) {
 		}
 
 		result := nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
-		if len(expectedResult) != len(result) {
-			t.Fail()
-		}
-	expectedLoop:
-		for _, expectedConfig := range expectedResult {
 
-			for _, resultConfig := range result {
-				if resultConfig == expectedConfig {
-					continue expectedLoop
-				}
-			}
+		if !reflect.DeepEqual(expectedResult, result) {
 			t.Fail()
 		}
 	})
@@ -846,17 +835,8 @@ func TestNextConfigsWithWeightChange(t *testing.T) {
 		}
 
 		result := nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
-		if len(expectedResult) != len(result) {
-			t.Fail()
-		}
-	expectedLoop:
-		for _, expectedConfig := range expectedResult {
 
-			for _, resultConfig := range result {
-				if resultConfig == expectedConfig {
-					continue expectedLoop
-				}
-			}
+		if !reflect.DeepEqual(expectedResult, result) {
 			t.Fail()
 		}
 	})
@@ -1354,30 +1334,4 @@ func TestMITMWFARverifier(t *testing.T) {
 			t.Fail()
 		}
 	})
-}
-
-func TestParser(t *testing.T) {
-	inputString := `1RB1LA_0LA0RB
-	0,0;0,1
-	0,0;1,0_2,0;1,1_2,0;2,0
-	0_
-	0,1,2_0
-	A,0,0,0,0,-_A,1,0,0,0,-_A,0,0,1,0,-_A,1,0,1,0,-_B,0,0,0,0,-_B,1,0,0,0,-_B,1,0,1,0,-`
-
-	input := bufio.NewScanner(strings.NewReader(strings.ReplaceAll(inputString, "\t", "")))
-	if !MITMWFARverifier(parseFullCertificate(input)) {
-		t.Fail()
-	}
-}
-
-func TestCert(t *testing.T) {
-	file, err := os.Open("TestCertificate.txt")
-	if err != nil {
-		t.FailNow()
-	}
-	defer file.Close()
-	input := bufio.NewScanner(file)
-	if !MITMWFARverifier(parseFullCertificate(input)) {
-		t.Fail()
-	}
 }

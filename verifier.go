@@ -315,7 +315,10 @@ func verifyForwardClosed(tm turingMachine, leftWFA, rightWFA dwfa, leftSpecialSe
 
 func nextConfigsWithWeightChange(oldConfig config, tm turingMachine, leftWFA, rightWFA dwfa) []configWithWeight {
 	result := []configWithWeight{}
-	tmTransition := tm.transitions[oldConfig.tmState][oldConfig.tmSymbol]
+	tmTransition, ok := tm.transitions[oldConfig.tmState][oldConfig.tmSymbol]
+	if !ok {
+		return result
+	}
 	switch tmTransition.direction {
 	case L:
 		for nextLeftState, leftStateTransitions := range leftWFA.transitions {
