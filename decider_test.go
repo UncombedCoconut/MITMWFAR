@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -87,8 +86,6 @@ func TestFindAcceptSet(t *testing.T) {
 	}
 	result := findAcceptSet(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets)
 
-	fmt.Println(expectedResult)
-	fmt.Println(result)
 	if !reflect.DeepEqual(expectedResult, result) {
 		t.Fail()
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -783,12 +784,15 @@ func TestNextConfigsWithWeightChange(t *testing.T) {
 		}
 		oldconfig := config{A, 0, 1, 1}
 		expectedResult := []configWithWeight{
-			{config{B, 1, 0, 0}, -2},
 			{config{B, 0, 0, 1}, -4},
 			{config{B, 0, 0, 2}, -1},
+			{config{B, 1, 0, 0}, -2},
 		}
 
 		result := nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
+		sort.Slice(result, func(i, j int) bool {
+			return fmt.Sprint(result[i].config) < fmt.Sprint(result[j].config)
+		})
 
 		if !reflect.DeepEqual(expectedResult, result) {
 			t.Fail()
@@ -835,6 +839,9 @@ func TestNextConfigsWithWeightChange(t *testing.T) {
 		}
 
 		result := nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
+		sort.Slice(result, func(i, j int) bool {
+			return fmt.Sprint(result[i].config) < fmt.Sprint(result[j].config)
+		})
 
 		if !reflect.DeepEqual(expectedResult, result) {
 			t.Fail()
