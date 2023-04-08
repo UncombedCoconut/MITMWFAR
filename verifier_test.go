@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 )
@@ -963,7 +964,7 @@ func TestNextConfigsWithWeightChangeIsAccepted(t *testing.T) {
 		bounds := bounds{}
 		leftSpecialSets := specialSets{nonPositive: map[wfaState]struct{}{0: {}}}
 		rightSpecialSets := specialSets{nonPositive: map[wfaState]struct{}{0: {}}}
-		acceptSet := acceptSet{{A, 0, 0, 0}: {LOWER: 0}}
+		acceptSet := acceptSet{{A, 0, 0, 0}: {UPPER: 0}}
 		if !nextConfigWithWeightChangeIsAccepted(configWithWeight, bounds, leftSpecialSets, rightSpecialSets, acceptSet) {
 			t.Fail()
 		}
@@ -1364,6 +1365,18 @@ func TestParser(t *testing.T) {
 	A,0,0,0,0,-_A,1,0,0,0,-_A,0,0,1,0,-_A,1,0,1,0,-_B,0,0,0,0,-_B,1,0,0,0,-_B,1,0,1,0,-`
 
 	input := bufio.NewScanner(strings.NewReader(strings.ReplaceAll(inputString, "\t", "")))
+	if !MITMWFARverifier(parseFullCertificate(input)) {
+		t.Fail()
+	}
+}
+
+func TestCert(t *testing.T) {
+	file, err := os.Open("TestCertificate.txt")
+	if err != nil {
+		t.FailNow()
+	}
+	defer file.Close()
+	input := bufio.NewScanner(file)
 	if !MITMWFARverifier(parseFullCertificate(input)) {
 		t.Fail()
 	}

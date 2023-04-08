@@ -386,7 +386,7 @@ func nextConfigWithWeightChangeIsAccepted(nextConfigWithWeightChange configWithW
 		nextBounds[LOWER] = lowerbound
 	}
 	if upperExists {
-		nextBounds[LOWER] = upperbound
+		nextBounds[UPPER] = upperbound
 	}
 
 	if upperExists && lowerExists && upperbound < lowerbound {
