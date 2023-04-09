@@ -138,6 +138,8 @@ func changeAcceptSetToContainNextConfigWithWeightChange(nextConfigWithWeightChan
 	return ChangeAcceptSetToCountainConfigBounds(acceptSet, nextConfig, nextBounds, hardLower, hardUpper)
 }
 
+const MAXFINITEINTERVALL = 10
+
 func ChangeAcceptSetToCountainConfigBounds(acceptSet acceptSet, nextConfig config, nextBounds map[boundType]weight, hardLower, hardUpper bool) bool {
 	acceptBounds, ok := acceptSet[nextConfig]
 	if !ok {
@@ -147,22 +149,31 @@ func ChangeAcceptSetToCountainConfigBounds(acceptSet acceptSet, nextConfig confi
 	change := false
 	acceptedLower, acceptedLowerExists := acceptBounds[LOWER]
 	nextLower, nextLowerExists := nextBounds[LOWER]
-	if acceptedLowerExists && (!nextLowerExists || acceptedLower > nextLower) {
-		delete(acceptSet[nextConfig], LOWER)
-		if hardLower {
-			acceptSet[nextConfig][LOWER] = 0
-		}
-		change = true
-	}
-
 	acceptedUpper, acceptedUpperExists := acceptBounds[UPPER]
 	nextUpper, nextUpperExists := nextBounds[UPPER]
-	if acceptedUpperExists && (!nextUpperExists || acceptedUpper < nextUpper) {
-		delete(acceptSet[nextConfig], UPPER)
-		if hardUpper {
-			acceptSet[nextConfig][UPPER] = 0
-		}
+
+	if acceptedLowerExists && (!nextLowerExists || acceptedLower > nextLower) {
 		change = true
+		if !acceptedUpperExists || !nextLowerExists || acceptedUpper-nextLower > MAXFINITEINTERVALL {
+			delete(acceptSet[nextConfig], LOWER)
+			if hardLower {
+				acceptSet[nextConfig][LOWER] = 0
+			}
+		} else {
+			acceptSet[nextConfig][LOWER] = nextLower
+		}
+	}
+
+	if acceptedUpperExists && (!nextUpperExists || acceptedUpper < nextUpper) {
+		change = true
+		if !acceptedLowerExists || !nextUpperExists || nextUpper-acceptedLower > MAXFINITEINTERVALL {
+			delete(acceptSet[nextConfig], UPPER)
+			if hardUpper {
+				acceptSet[nextConfig][UPPER] = 0
+			}
+		} else {
+			acceptSet[nextConfig][UPPER] = nextUpper
+		}
 	}
 	return change
 }
