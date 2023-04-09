@@ -13,16 +13,17 @@ func MITMWFARverifier(tm turingMachine, leftWFA, rightWFA dwfa, leftSpecialSets,
 		verifyForwardClosed(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet)
 	if result {
 		if printMode >= 0 {
-			fmt.Println(tm)
-		}
-		if printMode >= 1 {
-			fmt.Println(leftWFA)
-			fmt.Println(rightWFA)
-		}
-		if printMode >= 2 {
-			fmt.Println(leftSpecialSets)
-			fmt.Println(rightSpecialSets)
-			fmt.Println(acceptSet)
+			cert := fmt.Sprintln(tm)
+			if printMode >= 1 {
+				cert += fmt.Sprintln(leftWFA)
+				cert += fmt.Sprintln(rightWFA)
+			}
+			if printMode >= 2 {
+				cert += fmt.Sprintln(leftSpecialSets)
+				cert += fmt.Sprintln(rightSpecialSets)
+				cert += fmt.Sprintln(acceptSet)
+			}
+			fmt.Print(cert)
 		}
 	}
 	return result
