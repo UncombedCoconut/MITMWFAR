@@ -65,14 +65,17 @@ func findAcceptSet(tm turingMachine, leftWFA, rightWFA dwfa, leftSpecialSets, ri
 	initialConfig := config{TMSTARTSTATE, TMSTARTSYMBOL, leftWFA.startState, rightWFA.startState}
 	initialBounds := bounds{LOWER: 0, UPPER: 0}
 	todo := []config{initialConfig}
-	acceptSet := acceptSet{initialConfig: initialBounds}
+	result := acceptSet{initialConfig: initialBounds}
 
 	for len(todo) > 0 {
 		currentConfig := todo[0]
-		currentBounds := acceptSet[currentConfig]
+		currentBounds := result[currentConfig]
 		todo = todo[1:]
 
 		nextConfigs := nextConfigsWithWeightChange(currentConfig, tm, leftWFA, rightWFA)
+		if len(nextConfigs) == 0 {
+			return acceptSet{}
+		}
 		//sort to make this AcceptSetFinder deterministic.
 		//depending on the order it can fail to find valid accept sets
 		//that is due to the heuristic that removes bounds whenever conflicting bounds are encountered
@@ -80,13 +83,14 @@ func findAcceptSet(tm turingMachine, leftWFA, rightWFA dwfa, leftSpecialSets, ri
 			return fmt.Sprint(nextConfigs[i].config) < fmt.Sprint(nextConfigs[j].config)
 		})
 		for _, nextConfigWithWeightChange := range nextConfigs {
-			if changeAcceptSetToContainNextConfigWithWeightChange(nextConfigWithWeightChange, currentBounds, leftSpecialSets, rightSpecialSets, acceptSet) {
+
+			if changeAcceptSetToContainNextConfigWithWeightChange(nextConfigWithWeightChange, currentBounds, leftSpecialSets, rightSpecialSets, result) {
 				todo = append(todo, nextConfigWithWeightChange.config)
 			}
 		}
 
 	}
-	return acceptSet
+	return result
 }
 
 func changeAcceptSetToContainNextConfigWithWeightChange(nextConfigWithWeightChange configWithWeight, bounds bounds, leftSpecialSets, rightSpecialSets specialSets, acceptSet acceptSet) bool {
