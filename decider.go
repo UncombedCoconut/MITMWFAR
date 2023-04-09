@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"sort"
+)
+
 func ShortCertCompletion(tm turingMachine, leftWFA, rightWFA dwfa) (turingMachine, dwfa, dwfa, specialSets, specialSets, acceptSet) {
 	leftSpecialSets := deriveSpecialSets(leftWFA)
 	rightSpecialSets := deriveSpecialSets(rightWFA)
@@ -67,7 +72,14 @@ func findAcceptSet(tm turingMachine, leftWFA, rightWFA dwfa, leftSpecialSets, ri
 		currentBounds := acceptSet[currentConfig]
 		todo = todo[1:]
 
-		for _, nextConfigWithWeightChange := range nextConfigsWithWeightChange(currentConfig, tm, leftWFA, rightWFA) {
+		nextConfigs := nextConfigsWithWeightChange(currentConfig, tm, leftWFA, rightWFA)
+		//sort to make this AcceptSetFinder deterministic.
+		//depending on the order it can fail to find valid accept sets
+		//that is due to the heuristic that removes bounds whenever conflicting bounds are encountered
+		sort.Slice(nextConfigs, func(i, j int) bool {
+			return fmt.Sprint(nextConfigs[i].config) < fmt.Sprint(nextConfigs[j].config)
+		})
+		for _, nextConfigWithWeightChange := range nextConfigs {
 			if changeAcceptSetToContainNextConfigWithWeightChange(nextConfigWithWeightChange, currentBounds, leftSpecialSets, rightSpecialSets, acceptSet) {
 				todo = append(todo, nextConfigWithWeightChange.config)
 			}
