@@ -7,35 +7,54 @@ import (
 )
 
 //parsing isn't robust. Might panic on bad input.
-func parseFullCertificate(input *bufio.Scanner) (turingMachine, dwfa, dwfa, specialSets, specialSets, acceptSet) {
-	input.Scan()
-	tm := parseTM(input.Text())
-	input.Scan()
-	leftWFA := parseWFA(input.Text())
-	input.Scan()
-	rightWFA := parseWFA(input.Text())
-	input.Scan()
-	leftSpecialSets := parseSpecialSets(input.Text())
-	input.Scan()
-	rightSpecialSets := parseSpecialSets(input.Text())
-	input.Scan()
-	acceptSet := parseAcceptSet(input.Text())
-
-	return tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet
+func parseFullCertificate(input *bufio.Scanner, workTokens chan struct{}, printMode int) {
+	for input.Scan() {
+		_ = <-workTokens
+		tm := parseTM(input.Text())
+		input.Scan()
+		leftWFA := parseWFA(input.Text())
+		input.Scan()
+		rightWFA := parseWFA(input.Text())
+		input.Scan()
+		leftSpecialSets := parseSpecialSets(input.Text())
+		input.Scan()
+		rightSpecialSets := parseSpecialSets(input.Text())
+		input.Scan()
+		acceptSet := parseAcceptSet(input.Text())
+		go func() {
+			MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, printMode)
+			workTokens <- struct{}{}
+		}()
+	}
 }
 
-func parseShortCertificate(input *bufio.Scanner) (turingMachine, dwfa, dwfa, specialSets, specialSets, acceptSet) {
-	input.Scan()
-	tm := parseTM(input.Text())
-	input.Scan()
-	leftWFA := parseWFA(input.Text())
-	input.Scan()
-	rightWFA := parseWFA(input.Text())
-	leftSpecialSets := deriveSpecialSets(leftWFA)
-	rightSpecialSets := deriveSpecialSets(rightWFA)
-	acceptSet := findAcceptSet(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets)
+func parseShortCertificate(input *bufio.Scanner, workTokens chan struct{}, printMode int) {
+	for input.Scan() {
+		_ = <-workTokens
+		tm := parseTM(input.Text())
+		input.Scan()
+		leftWFA := parseWFA(input.Text())
+		input.Scan()
+		rightWFA := parseWFA(input.Text())
+		leftSpecialSets := deriveSpecialSets(leftWFA)
+		rightSpecialSets := deriveSpecialSets(rightWFA)
+		acceptSet := findAcceptSet(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets)
+		go func() {
+			MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, printMode)
+			workTokens <- struct{}{}
+		}()
+	}
+}
 
-	return tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet
+func parseTmStandardFormat(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs int) {
+	for input.Scan() {
+		_ = <-workTokens
+		tm := parseTM(input.Text())
+		go func() {
+			MITMWFARdecider(tm, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs, printMode)
+			workTokens <- struct{}{}
+		}()
+	}
 }
 
 //standard text format
@@ -101,14 +120,14 @@ func parseSpecialSets(s string) specialSets {
 	}
 }
 
-func parseStateSet(s string) map[wfaState]struct{} {
-	set := map[wfaState]struct{}{}
+func parseStateSet(s string) set[wfaState] {
+	set := set[wfaState]{}
 	if s == "" {
 		return set
 	}
 	for _, stateString := range strings.Split(s, ",") {
 		state, _ := strconv.Atoi(stateString)
-		set[wfaState(state)] = struct{}{}
+		set.add(wfaState(state))
 	}
 	return set
 }

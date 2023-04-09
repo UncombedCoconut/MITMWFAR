@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 func ShortCertCompletion(tm turingMachine, leftWFA, rightWFA dwfa) (turingMachine, dwfa, dwfa, specialSets, specialSets, acceptSet) {
 	leftSpecialSets := deriveSpecialSets(leftWFA)
 	rightSpecialSets := deriveSpecialSets(rightWFA)
@@ -10,15 +8,15 @@ func ShortCertCompletion(tm turingMachine, leftWFA, rightWFA dwfa) (turingMachin
 }
 
 func deriveSpecialSets(wfa dwfa) specialSets {
-	possibleNegative := map[wfaState]struct{}{}
-	possiblePositive := map[wfaState]struct{}{}
+	possibleNegative := set[wfaState]{}
+	possiblePositive := set[wfaState]{}
 	for _, tmp := range wfa.transitions {
 		for _, transition := range tmp {
 			if transition.weight < 0 {
-				possibleNegative[transition.wfaState] = struct{}{}
+				possibleNegative.add(transition.wfaState)
 			}
 			if transition.weight > 0 {
-				possiblePositive[transition.wfaState] = struct{}{}
+				possiblePositive.add(transition.wfaState)
 			}
 		}
 	}
@@ -26,21 +24,21 @@ func deriveSpecialSets(wfa dwfa) specialSets {
 	completeClosure(possiblePositive, wfa)
 
 	specialSets := specialSets{
-		nonNegative: map[wfaState]struct{}{},
-		nonPositive: map[wfaState]struct{}{},
+		nonNegative: set[wfaState]{},
+		nonPositive: set[wfaState]{},
 	}
 	for i := 0; i < wfa.states; i++ {
-		if _, ok := possibleNegative[wfaState(i)]; !ok {
-			specialSets.nonNegative[wfaState(i)] = struct{}{}
+		if !possibleNegative.contains(wfaState(i)) {
+			specialSets.nonNegative.add(wfaState(i))
 		}
-		if _, ok := possiblePositive[wfaState(i)]; !ok {
-			specialSets.nonPositive[wfaState(i)] = struct{}{}
+		if !possiblePositive.contains(wfaState(i)) {
+			specialSets.nonPositive.add(wfaState(i))
 		}
 	}
 	return specialSets
 }
 
-func completeClosure(set map[wfaState]struct{}, wfa dwfa) {
+func completeClosure(set set[wfaState], wfa dwfa) {
 	todo := []wfaState{}
 	for initialState := range set {
 		todo = append(todo, initialState)
@@ -50,8 +48,8 @@ func completeClosure(set map[wfaState]struct{}, wfa dwfa) {
 		todo = todo[1:]
 		for _, transition := range wfa.transitions[currentState] {
 			nextState := transition.wfaState
-			if _, ok := set[nextState]; !ok {
-				set[nextState] = struct{}{}
+			if !set.contains(nextState) {
+				set.add(nextState)
 				todo = append(todo, nextState)
 			}
 		}
@@ -159,35 +157,7 @@ func ChangeAcceptSetToCountainConfigBounds(acceptSet acceptSet, nextConfig confi
 
 //------------------------------------------------------------------------------------------------
 
-type set[T comparable] map[T]struct{}
-
-func (s set[T]) contains(elem T) bool {
-	_, exists := s[elem]
-	return exists
-}
-func (s set[T]) add(elem T) {
-	s[elem] = struct{}{}
-}
-func (s set[T]) remove(elem T) {
-	delete(s, elem)
-}
-
-func copyWFA(oldWFA dwfa) dwfa {
-	newWFA := dwfa{
-		states:      oldWFA.states,
-		symbols:     oldWFA.symbols,
-		startState:  oldWFA.startState,
-		transitions: map[wfaState]map[symbol]wfaTransition{},
-	}
-	for state, tmp := range oldWFA.transitions {
-		newWFA.transitions[state] = map[symbol]wfaTransition{}
-		for symbol, transition := range tmp {
-			newWFA.transitions[state][symbol] = transition
-		}
-	}
-	return newWFA
-}
-func MITMWFARdecider(tm turingMachine, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs int) bool {
+func MITMWFARdecider(tm turingMachine, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode int) bool {
 	leftWFA := dwfa{
 		states:      2,
 		symbols:     tm.symbols,
@@ -213,13 +183,13 @@ func MITMWFARdecider(tm turingMachine, maxTransitions, maxStatesLeft, maxStatesR
 	}
 	leftWFA.transitions[0][0] = wfaTransition{0, 0}
 	rightWFA.transitions[0][0] = wfaTransition{0, 0}
-	return recursiveDecider(tm, leftWFA, rightWFA, 2, 2, 2, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs)
+	return recursiveDecider(tm, leftWFA, rightWFA, 2, 2, 2, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode)
 }
 
-func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitions, currentStatesLeft, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs int) bool {
+func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitions, currentStatesLeft, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode int) bool {
 	closed, breakingSide, breakingState, breakingSymbol := findClosure(tm, leftWFA, rightWFA)
 	if closed {
-		return recursiveWeightAdder(tm, leftWFA, rightWFA, 0, maxWeightPairs)
+		return recursiveWeightAdder(tm, leftWFA, rightWFA, 0, maxWeightPairs, printMode)
 	}
 	if currentTransitions >= maxTransitions {
 		return false
@@ -235,7 +205,7 @@ func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitio
 				newWFA.transitions[newState][symbol(i)] = wfaTransition{1, 0}
 			}
 			newWFA.transitions[breakingState][breakingSymbol] = wfaTransition{newState, 0}
-			if recursiveDecider(tm, newWFA, rightWFA, currentTransitions+1, currentStatesLeft+1, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs) {
+			if recursiveDecider(tm, newWFA, rightWFA, currentTransitions+1, currentStatesLeft+1, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
 				return true
 			}
 		}
@@ -245,7 +215,7 @@ func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitio
 			}
 			newWFA := copyWFA(leftWFA)
 			newWFA.transitions[breakingState][breakingSymbol] = wfaTransition{wfaState(i), 0}
-			if recursiveDecider(tm, newWFA, rightWFA, currentTransitions+1, currentStatesLeft, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs) {
+			if recursiveDecider(tm, newWFA, rightWFA, currentTransitions+1, currentStatesLeft, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
 				return true
 			}
 		}
@@ -259,7 +229,7 @@ func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitio
 				newWFA.transitions[newState][symbol(i)] = wfaTransition{1, 0}
 			}
 			newWFA.transitions[breakingState][breakingSymbol] = wfaTransition{newState, 0}
-			if recursiveDecider(tm, leftWFA, newWFA, currentTransitions+1, currentStatesLeft, currentStatesRight+1, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs) {
+			if recursiveDecider(tm, leftWFA, newWFA, currentTransitions+1, currentStatesLeft, currentStatesRight+1, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
 				return true
 			}
 		}
@@ -269,7 +239,7 @@ func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitio
 			}
 			newWFA := copyWFA(rightWFA)
 			newWFA.transitions[breakingState][breakingSymbol] = wfaTransition{wfaState(i), 0}
-			if recursiveDecider(tm, leftWFA, newWFA, currentTransitions+1, currentStatesLeft, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs) {
+			if recursiveDecider(tm, leftWFA, newWFA, currentTransitions+1, currentStatesLeft, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
 				return true
 			}
 		}
@@ -304,9 +274,12 @@ func findClosure(tm turingMachine, leftWFA, rightWFA dwfa) (bool, direction, wfa
 	return true, L, 0, 0
 }
 
-func recursiveWeightAdder(tm turingMachine, leftWFA, rightWFA dwfa, currenWeightPairs, maxWeightPairs int) bool {
-	if MITMWFARverifier(ShortCertCompletion(tm, leftWFA, rightWFA)) {
-		fmt.Println(leftWFA, rightWFA)
+func recursiveWeightAdder(tm turingMachine, leftWFA, rightWFA dwfa, currenWeightPairs, maxWeightPairs, printMode int) bool {
+
+	leftSpecialSets := deriveSpecialSets(leftWFA)
+	rightSpecialSets := deriveSpecialSets(rightWFA)
+	acceptSet := findAcceptSet(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets)
+	if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, printMode) {
 		return true
 	}
 	if currenWeightPairs >= maxWeightPairs {
@@ -331,7 +304,7 @@ func recursiveWeightAdder(tm turingMachine, leftWFA, rightWFA dwfa, currenWeight
 						}
 						newRightWFA := copyWFA(rightWFA)
 						newRightWFA.transitions[rightState][rightSymbol] = wfaTransition{rightTransition.wfaState, rightTransition.weight + weights[1]}
-						if recursiveWeightAdder(tm, newLeftWFA, newRightWFA, currenWeightPairs+1, maxWeightPairs) {
+						if recursiveWeightAdder(tm, newLeftWFA, newRightWFA, currenWeightPairs+1, maxWeightPairs, printMode) {
 							return true
 						}
 					}
@@ -340,24 +313,4 @@ func recursiveWeightAdder(tm turingMachine, leftWFA, rightWFA dwfa, currenWeight
 		}
 	}
 	return false
-}
-
-func MITMDFAdecider(tm turingMachine, maxStates int) bool {
-	return MITMWFARdecider(tm, maxStates*tm.symbols, maxStates, maxStates, 0)
-}
-
-func (wfa dwfa) String() string {
-	result := "_"
-	for i := 0; i < wfa.states; i++ {
-		for j := 0; j < wfa.symbols; j++ {
-			transition, ok := wfa.transitions[wfaState(i)][symbol(j)]
-			if !ok {
-				result += "-,-;"
-				continue
-			}
-			result += fmt.Sprintf("%d,%d;", transition.wfaState, transition.weight)
-		}
-		result = result[:len(result)-1] + "_"
-	}
-	return result[1 : len(result)-1]
 }

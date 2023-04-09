@@ -292,7 +292,7 @@ func TestVerifySpecialSetsAreSubsets(t *testing.T) {
 	t.Run("OutOfBoundStateNonNegative", func(t *testing.T) {
 		wfa := dwfa{states: 2}
 		specialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{3: {}},
+			nonNegative: set[wfaState]{3: {}},
 		}
 		if verifySpecialSetsAreSubsets(wfa, specialSets) {
 			t.Fail()
@@ -301,7 +301,7 @@ func TestVerifySpecialSetsAreSubsets(t *testing.T) {
 	t.Run("OutOfBoundStateNonPositive", func(t *testing.T) {
 		wfa := dwfa{states: 2}
 		specialSets := specialSets{
-			nonPositive: map[wfaState]struct{}{3: {}},
+			nonPositive: set[wfaState]{3: {}},
 		}
 		if verifySpecialSetsAreSubsets(wfa, specialSets) {
 			t.Fail()
@@ -310,8 +310,8 @@ func TestVerifySpecialSetsAreSubsets(t *testing.T) {
 	t.Run("CorrectSubsets", func(t *testing.T) {
 		wfa := dwfa{states: 2}
 		specialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{1: {}},
-			nonPositive: map[wfaState]struct{}{0: {}, 1: {}},
+			nonNegative: set[wfaState]{1: {}},
+			nonPositive: set[wfaState]{0: {}, 1: {}},
 		}
 		if !verifySpecialSetsAreSubsets(wfa, specialSets) {
 			t.Fail()
@@ -469,8 +469,8 @@ func TestVerifyLeadingBlankInvariant(t *testing.T) {
 func TestVerifySpecialSetsHaveClaimedProperty(t *testing.T) {
 	t.Run("EmptySet", func(t *testing.T) {
 		specialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{},
-			nonPositive: map[wfaState]struct{}{},
+			nonNegative: set[wfaState]{},
+			nonPositive: set[wfaState]{},
 		}
 		wfa := dwfa{
 			states:     4,
@@ -493,8 +493,8 @@ func TestVerifySpecialSetsHaveClaimedProperty(t *testing.T) {
 	})
 	t.Run("NoWeights", func(t *testing.T) {
 		specialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}, 3: {}},
-			nonPositive: map[wfaState]struct{}{0: {}, 1: {}, 2: {}, 3: {}},
+			nonNegative: set[wfaState]{0: {}, 1: {}, 2: {}, 3: {}},
+			nonPositive: set[wfaState]{0: {}, 1: {}, 2: {}, 3: {}},
 		}
 		wfa := dwfa{
 			states:     4,
@@ -517,8 +517,8 @@ func TestVerifySpecialSetsHaveClaimedProperty(t *testing.T) {
 	})
 	t.Run("CorrectSets", func(t *testing.T) {
 		specialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}, 1: {}},
-			nonPositive: map[wfaState]struct{}{0: {}, 1: {}},
+			nonNegative: set[wfaState]{0: {}, 1: {}},
+			nonPositive: set[wfaState]{0: {}, 1: {}},
 		}
 		wfa := dwfa{
 			states:     4,
@@ -541,8 +541,8 @@ func TestVerifySpecialSetsHaveClaimedProperty(t *testing.T) {
 	})
 	t.Run("InternalPositive", func(t *testing.T) {
 		specialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}, 1: {}},
-			nonPositive: map[wfaState]struct{}{0: {}, 1: {}},
+			nonNegative: set[wfaState]{0: {}, 1: {}},
+			nonPositive: set[wfaState]{0: {}, 1: {}},
 		}
 		wfa := dwfa{
 			states:     4,
@@ -565,8 +565,8 @@ func TestVerifySpecialSetsHaveClaimedProperty(t *testing.T) {
 	})
 	t.Run("InternalNegative", func(t *testing.T) {
 		specialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}, 1: {}},
-			nonPositive: map[wfaState]struct{}{0: {}, 1: {}},
+			nonNegative: set[wfaState]{0: {}, 1: {}},
+			nonPositive: set[wfaState]{0: {}, 1: {}},
 		}
 		wfa := dwfa{
 			states:     4,
@@ -589,8 +589,8 @@ func TestVerifySpecialSetsHaveClaimedProperty(t *testing.T) {
 	})
 	t.Run("NonClosedPositive", func(t *testing.T) {
 		specialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}, 1: {}},
-			nonPositive: map[wfaState]struct{}{2: {}, 3: {}},
+			nonNegative: set[wfaState]{0: {}, 1: {}},
+			nonPositive: set[wfaState]{2: {}, 3: {}},
 		}
 		wfa := dwfa{
 			states:     4,
@@ -613,8 +613,8 @@ func TestVerifySpecialSetsHaveClaimedProperty(t *testing.T) {
 	})
 	t.Run("NonClosedNegative", func(t *testing.T) {
 		specialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{2: {}, 3: {}},
-			nonPositive: map[wfaState]struct{}{0: {}, 1: {}},
+			nonNegative: set[wfaState]{2: {}, 3: {}},
+			nonPositive: set[wfaState]{0: {}, 1: {}},
 		}
 		wfa := dwfa{
 			states:     4,
@@ -939,8 +939,8 @@ func TestNextConfigsWithWeightChangeIsAccepted(t *testing.T) {
 	t.Run("CorrectViaSpecialSetNonNegative", func(t *testing.T) {
 		configWithWeight := configWithWeight{config{A, 0, 0, 0}, -1}
 		bounds := bounds{}
-		leftSpecialSets := specialSets{nonNegative: map[wfaState]struct{}{0: {}}}
-		rightSpecialSets := specialSets{nonNegative: map[wfaState]struct{}{0: {}}}
+		leftSpecialSets := specialSets{nonNegative: set[wfaState]{0: {}}}
+		rightSpecialSets := specialSets{nonNegative: set[wfaState]{0: {}}}
 		acceptSet := acceptSet{{A, 0, 0, 0}: {LOWER: 0}}
 		if !nextConfigWithWeightChangeIsAccepted(configWithWeight, bounds, leftSpecialSets, rightSpecialSets, acceptSet) {
 			t.Fail()
@@ -949,8 +949,8 @@ func TestNextConfigsWithWeightChangeIsAccepted(t *testing.T) {
 	t.Run("CorrectViaSpecialSetNonPositive", func(t *testing.T) {
 		configWithWeight := configWithWeight{config{A, 0, 0, 0}, 1}
 		bounds := bounds{}
-		leftSpecialSets := specialSets{nonPositive: map[wfaState]struct{}{0: {}}}
-		rightSpecialSets := specialSets{nonPositive: map[wfaState]struct{}{0: {}}}
+		leftSpecialSets := specialSets{nonPositive: set[wfaState]{0: {}}}
+		rightSpecialSets := specialSets{nonPositive: set[wfaState]{0: {}}}
 		acceptSet := acceptSet{{A, 0, 0, 0}: {UPPER: 0}}
 		if !nextConfigWithWeightChangeIsAccepted(configWithWeight, bounds, leftSpecialSets, rightSpecialSets, acceptSet) {
 			t.Fail()
@@ -1106,12 +1106,12 @@ func TestMITMWFARverifier(t *testing.T) {
 			},
 		}
 		leftSpecialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}},
-			nonPositive: map[wfaState]struct{}{},
+			nonNegative: set[wfaState]{0: {}},
+			nonPositive: set[wfaState]{},
 		}
 		rightSpecialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}},
-			nonPositive: map[wfaState]struct{}{0: {}},
+			nonNegative: set[wfaState]{0: {}, 1: {}, 2: {}},
+			nonPositive: set[wfaState]{0: {}},
 		}
 		acceptSet := acceptSet{
 			{A, 0, 0, 0}: {LOWER: 0},
@@ -1122,7 +1122,7 @@ func TestMITMWFARverifier(t *testing.T) {
 			{B, 1, 0, 0}: {LOWER: 0},
 			{B, 1, 0, 1}: {LOWER: 0},
 		}
-		if !MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) {
+		if !MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, -1) {
 			t.Fail()
 		}
 	})
@@ -1160,12 +1160,12 @@ func TestMITMWFARverifier(t *testing.T) {
 			},
 		}
 		leftSpecialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}},
-			nonPositive: map[wfaState]struct{}{},
+			nonNegative: set[wfaState]{0: {}},
+			nonPositive: set[wfaState]{},
 		}
 		rightSpecialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}},
-			nonPositive: map[wfaState]struct{}{0: {}},
+			nonNegative: set[wfaState]{0: {}, 1: {}, 2: {}},
+			nonPositive: set[wfaState]{0: {}},
 		}
 		acceptSet := acceptSet{
 			{A, 0, 0, 0}: {LOWER: 0},
@@ -1175,7 +1175,7 @@ func TestMITMWFARverifier(t *testing.T) {
 			{B, 1, 0, 0}: {LOWER: 0},
 			{B, 1, 0, 1}: {LOWER: 0},
 		}
-		if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) {
+		if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, -1) {
 			t.Fail()
 		}
 	})
@@ -1213,12 +1213,12 @@ func TestMITMWFARverifier(t *testing.T) {
 			},
 		}
 		leftSpecialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}},
-			nonPositive: map[wfaState]struct{}{},
+			nonNegative: set[wfaState]{0: {}},
+			nonPositive: set[wfaState]{},
 		}
 		rightSpecialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}},
-			nonPositive: map[wfaState]struct{}{0: {}},
+			nonNegative: set[wfaState]{0: {}, 1: {}, 2: {}},
+			nonPositive: set[wfaState]{0: {}},
 		}
 		acceptSet := acceptSet{
 			{A, 0, 0, 0}: {LOWER: 0},
@@ -1229,7 +1229,7 @@ func TestMITMWFARverifier(t *testing.T) {
 			{B, 1, 0, 0}: {LOWER: 0},
 			{B, 1, 0, 1}: {LOWER: 0},
 		}
-		if !MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) {
+		if !MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, -1) {
 			t.Fail()
 		}
 	})
@@ -1267,12 +1267,12 @@ func TestMITMWFARverifier(t *testing.T) {
 			},
 		}
 		leftSpecialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{},
-			nonPositive: map[wfaState]struct{}{},
+			nonNegative: set[wfaState]{},
+			nonPositive: set[wfaState]{},
 		}
 		rightSpecialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}},
-			nonPositive: map[wfaState]struct{}{0: {}},
+			nonNegative: set[wfaState]{0: {}, 1: {}, 2: {}},
+			nonPositive: set[wfaState]{0: {}},
 		}
 		acceptSet := acceptSet{
 			{A, 0, 0, 0}: {LOWER: 0},
@@ -1283,7 +1283,7 @@ func TestMITMWFARverifier(t *testing.T) {
 			{B, 1, 0, 0}: {LOWER: 0},
 			{B, 1, 0, 1}: {LOWER: 0},
 		}
-		if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) {
+		if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, -1) {
 			t.Fail()
 		}
 	})
@@ -1321,12 +1321,12 @@ func TestMITMWFARverifier(t *testing.T) {
 			},
 		}
 		leftSpecialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}},
-			nonPositive: map[wfaState]struct{}{},
+			nonNegative: set[wfaState]{0: {}},
+			nonPositive: set[wfaState]{},
 		}
 		rightSpecialSets := specialSets{
-			nonNegative: map[wfaState]struct{}{0: {}, 1: {}, 2: {}},
-			nonPositive: map[wfaState]struct{}{0: {}},
+			nonNegative: set[wfaState]{0: {}, 1: {}, 2: {}},
+			nonPositive: set[wfaState]{0: {}},
 		}
 		acceptSet := acceptSet{
 			{A, 0, 0, 0}: {LOWER: 0, UPPER: 10},
@@ -1337,7 +1337,7 @@ func TestMITMWFARverifier(t *testing.T) {
 			{B, 1, 0, 0}: {LOWER: 0, UPPER: 10},
 			{B, 1, 0, 1}: {LOWER: 0, UPPER: 10},
 		}
-		if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet) {
+		if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, -1) {
 			t.Fail()
 		}
 	})

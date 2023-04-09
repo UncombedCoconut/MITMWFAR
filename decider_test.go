@@ -188,7 +188,7 @@ func TestMITMWFARdecider(t *testing.T) {
 				1: {0, L, E}},
 		},
 	}
-	if !MITMWFARdecider(tm, 11, 4, 4, 1) {
+	if !MITMWFARdecider(tm, 11, 4, 4, 1, -1) {
 		t.Fail()
 	}
 }
@@ -210,7 +210,7 @@ func TestMITMDFAdecider(t *testing.T) {
 					1: {0, L, A}},
 			},
 		}
-		if !MITMDFAdecider(tm, 5) {
+		if !MITMWFARdecider(tm, 16, 5, 5, 0, -1) {
 			t.Fail()
 		}
 	})
@@ -230,7 +230,7 @@ func TestMITMDFAdecider(t *testing.T) {
 				E: {1: {0, R, A}},
 			},
 		}
-		if MITMDFAdecider(tm, 5) {
+		if MITMWFARdecider(tm, 12, 4, 4, 0, -1) {
 			t.Fail()
 		}
 	})

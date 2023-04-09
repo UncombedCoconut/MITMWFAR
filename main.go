@@ -3,8 +3,8 @@ package main
 import (
 	"bufio"
 	"flag"
-	"fmt"
 	"os"
+	"runtime"
 )
 
 func main() {
@@ -15,21 +15,30 @@ func main() {
 	leftStates := flag.Int("l", 4, "maximum number of states in the left WFA")
 	rightStates := flag.Int("r", 4, "maximum number of states in the left WFA")
 	weightPairs := flag.Int("w", 1, "maximum number of weighted transitions in each WFA")
+	printMode := flag.Int("pm", 0, "what to print: 0 -> solved TMs, 1 -> short certificates, 2 -> full certificates")
+	cores := flag.Int("cores", 0, "maximum number of TMs to work on in parallel")
 
 	flag.Parse()
 
+	if *cores <= 0 {
+		*cores = runtime.GOMAXPROCS(0)
+	}
+	workTokens := make(chan struct{}, *cores)
+	for i := 0; i < *cores; i++ {
+		workTokens <- struct{}{}
+	}
 	input := bufio.NewScanner(os.Stdin)
 	switch {
 	case *fullcert:
-		result := MITMWFARverifier(parseFullCertificate(input))
-		fmt.Println(result)
+		parseFullCertificate(input, workTokens, *printMode)
 	case *shortcert:
-		result := MITMWFARverifier(parseShortCertificate(input))
-		fmt.Println(result)
+		parseShortCertificate(input, workTokens, *printMode)
 	default:
-		for input.Scan() {
-			result := MITMWFARdecider(parseTM(input.Text()), *transitions, *leftStates, *rightStates, *weightPairs)
-			fmt.Println(input.Text(), result)
-		}
+		parseTmStandardFormat(input, workTokens, *printMode, *transitions, *leftStates, *rightStates, *weightPairs)
+	}
+
+	//make sure all the work is finished
+	for i := 0; i < *cores; i++ {
+		_ = <-workTokens
 	}
 }
