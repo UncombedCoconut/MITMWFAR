@@ -306,7 +306,7 @@ func recursiveWeightAdder(tm turingMachine, leftWFA, rightWFA dwfa, currenWeight
 	leftSpecialSets := deriveSpecialSets(leftWFA)
 	rightSpecialSets := deriveSpecialSets(rightWFA)
 	acceptSet := findAcceptSet(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets)
-	if MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, printMode) {
+	if len(acceptSet) > 0 && MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, printMode) {
 		return true
 	}
 	if currenWeightPairs >= maxWeightPairs {
@@ -319,14 +319,14 @@ func recursiveWeightAdder(tm turingMachine, leftWFA, rightWFA dwfa, currenWeight
 	for _, weights := range weightPermutations {
 		for leftState, tmpLeft := range leftWFA.transitions {
 			for leftSymbol, leftTransition := range tmpLeft {
-				if leftTransition.wfaState == 1 {
+				if leftTransition.wfaState == 1 || (leftState == 0 && leftSymbol == 0) {
 					continue
 				}
 				newLeftWFA := copyWFA(leftWFA)
 				newLeftWFA.transitions[leftState][leftSymbol] = wfaTransition{leftTransition.wfaState, leftTransition.weight + weights[0]}
 				for rightState, tmpRight := range rightWFA.transitions {
 					for rightSymbol, rightTransition := range tmpRight {
-						if rightTransition.wfaState == 1 {
+						if rightTransition.wfaState == 1 || (rightState == 0 && rightSymbol == 0) {
 							continue
 						}
 						newRightWFA := copyWFA(rightWFA)
