@@ -81,7 +81,7 @@ func runDFAScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxSt
 		_ = <-workTokens
 		tm := parseTM(input.Text())
 		go func() {
-			maxTransitions := 4*maxStates - 4
+			maxTransitions := tm.symbols * (maxStates - 1) * 2
 			for transitions := 2; transitions <= maxTransitions; transitions++ {
 				if MITMWFARdecider(tm, transitions, maxStates, maxStates, 0, printMode) {
 					break
