@@ -42,7 +42,7 @@ func main() {
 	case *shortcert:
 		parseShortCertificate(input, workTokens, *printMode)
 	case *scan > 0:
-		runWeightedScan(input, workTokens, *printMode, *scan)
+		runWeightedScan(input, workTokens, *printMode, *scan, *weightPairs)
 	case *dfa > 0:
 		runDFAScan(input, workTokens, *printMode, *dfa)
 	default:

@@ -60,13 +60,13 @@ func runSpecificValues(input *bufio.Scanner, workTokens chan struct{}, printMode
 }
 
 //parsing isn't robust. Might panic on bad input.
-func runWeightedScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions int) {
+func runWeightedScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions, maxWeightPairs int) {
 	for input.Scan() {
 		_ = <-workTokens
 		tm := parseTM(input.Text())
 		go func() {
 			for transitions := 2; transitions <= maxTransitions; transitions++ {
-				if MITMWFARdecider(tm, transitions, maxTransitions, maxTransitions, 1, printMode) {
+				if MITMWFARdecider(tm, transitions, maxTransitions, maxTransitions, maxWeightPairs, printMode) {
 					break
 				}
 			}
