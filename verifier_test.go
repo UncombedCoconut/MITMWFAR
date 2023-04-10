@@ -872,8 +872,7 @@ func TestNextConfigsWithWeightChange(t *testing.T) {
 				t.Fail()
 			}
 		}()
-		result := nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
-		fmt.Println(result)
+		nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
 	})
 	t.Run("OverflowRightMove", func(t *testing.T) {
 		tm := turingMachine{
@@ -900,8 +899,7 @@ func TestNextConfigsWithWeightChange(t *testing.T) {
 				t.Fail()
 			}
 		}()
-		result := nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
-		fmt.Println(result)
+		nextConfigsWithWeightChange(oldconfig, tm, leftWFA, rightWFA)
 	})
 }
 
