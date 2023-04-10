@@ -210,20 +210,21 @@ func MITMWFARdecider(tm turingMachine, maxTransitions, maxStatesLeft, maxStatesR
 	}
 	leftWFA.transitions[0][0] = wfaTransition{0, 0}
 	rightWFA.transitions[0][0] = wfaTransition{0, 0}
-	return recursiveDecider(tm, leftWFA, rightWFA, 2, 2, 2, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode)
+	return recursiveDecider(tm, leftWFA, rightWFA, 2, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode)
 }
 
-func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitions, currentStatesLeft, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode int) bool {
+func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitions, targetTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode int) bool {
 	closed, breakingSide, breakingState, breakingSymbol := findClosure(tm, leftWFA, rightWFA)
 	if closed {
-		return recursiveWeightAdder(tm, leftWFA, rightWFA, 0, maxWeightPairs, printMode)
+		return currentTransitions == targetTransitions &&
+			recursiveWeightAdder(tm, leftWFA, rightWFA, 0, maxWeightPairs, printMode)
 	}
-	if currentTransitions >= maxTransitions {
+	if currentTransitions >= targetTransitions {
 		return false
 	}
 	switch breakingSide {
 	case LEFT:
-		if currentStatesLeft < maxStatesLeft {
+		if leftWFA.states < maxStatesLeft {
 			newWFA := copyWFA(leftWFA)
 			newState := wfaState(newWFA.states)
 			newWFA.states += 1
@@ -232,7 +233,7 @@ func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitio
 				newWFA.transitions[newState][symbol(i)] = wfaTransition{1, 0}
 			}
 			newWFA.transitions[breakingState][breakingSymbol] = wfaTransition{newState, 0}
-			if recursiveDecider(tm, newWFA, rightWFA, currentTransitions+1, currentStatesLeft+1, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
+			if recursiveDecider(tm, newWFA, rightWFA, currentTransitions+1, targetTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
 				return true
 			}
 		}
@@ -242,12 +243,12 @@ func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitio
 			}
 			newWFA := copyWFA(leftWFA)
 			newWFA.transitions[breakingState][breakingSymbol] = wfaTransition{wfaState(i), 0}
-			if recursiveDecider(tm, newWFA, rightWFA, currentTransitions+1, currentStatesLeft, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
+			if recursiveDecider(tm, newWFA, rightWFA, currentTransitions+1, targetTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
 				return true
 			}
 		}
 	case RIGHT:
-		if currentStatesRight < maxStatesRight {
+		if rightWFA.states < maxStatesRight {
 			newWFA := copyWFA(rightWFA)
 			newState := wfaState(newWFA.states)
 			newWFA.states += 1
@@ -256,7 +257,7 @@ func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitio
 				newWFA.transitions[newState][symbol(i)] = wfaTransition{1, 0}
 			}
 			newWFA.transitions[breakingState][breakingSymbol] = wfaTransition{newState, 0}
-			if recursiveDecider(tm, leftWFA, newWFA, currentTransitions+1, currentStatesLeft, currentStatesRight+1, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
+			if recursiveDecider(tm, leftWFA, newWFA, currentTransitions+1, targetTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
 				return true
 			}
 		}
@@ -266,7 +267,7 @@ func recursiveDecider(tm turingMachine, leftWFA, rightWFA dwfa, currentTransitio
 			}
 			newWFA := copyWFA(rightWFA)
 			newWFA.transitions[breakingState][breakingSymbol] = wfaTransition{wfaState(i), 0}
-			if recursiveDecider(tm, leftWFA, newWFA, currentTransitions+1, currentStatesLeft, currentStatesRight, maxTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
+			if recursiveDecider(tm, leftWFA, newWFA, currentTransitions+1, targetTransitions, maxStatesLeft, maxStatesRight, maxWeightPairs, printMode) {
 				return true
 			}
 		}

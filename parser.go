@@ -28,6 +28,7 @@ func parseFullCertificate(input *bufio.Scanner, workTokens chan struct{}, printM
 	}
 }
 
+//parsing isn't robust. Might panic on bad input.
 func parseShortCertificate(input *bufio.Scanner, workTokens chan struct{}, printMode int) {
 	for input.Scan() {
 		_ = <-workTokens
@@ -46,12 +47,46 @@ func parseShortCertificate(input *bufio.Scanner, workTokens chan struct{}, print
 	}
 }
 
-func parseTmStandardFormat(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs int) {
+//parsing isn't robust. Might panic on bad input.
+func runSpecificValues(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs int) {
 	for input.Scan() {
 		_ = <-workTokens
 		tm := parseTM(input.Text())
 		go func() {
 			MITMWFARdecider(tm, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs, printMode)
+			workTokens <- struct{}{}
+		}()
+	}
+}
+
+//parsing isn't robust. Might panic on bad input.
+func runWeightedScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions int) {
+	for input.Scan() {
+		_ = <-workTokens
+		tm := parseTM(input.Text())
+		go func() {
+			for transitions := 2; transitions <= maxTransitions; transitions++ {
+				if MITMWFARdecider(tm, transitions, maxTransitions, maxTransitions, 1, printMode) {
+					break
+				}
+			}
+			workTokens <- struct{}{}
+		}()
+	}
+}
+
+//parsing isn't robust. Might panic on bad input.
+func runDFAScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxStates int) {
+	for input.Scan() {
+		_ = <-workTokens
+		tm := parseTM(input.Text())
+		go func() {
+			maxTransitions := 4*maxStates - 4
+			for transitions := 2; transitions <= maxTransitions; transitions++ {
+				if MITMWFARdecider(tm, transitions, maxStates, maxStates, 0, printMode) {
+					break
+				}
+			}
 			workTokens <- struct{}{}
 		}()
 	}
