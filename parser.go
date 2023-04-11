@@ -48,25 +48,25 @@ func parseShortCertificate(input *bufio.Scanner, workTokens chan struct{}, print
 }
 
 //parsing isn't robust. Might panic on bad input.
-func runSpecificValues(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs int) {
+func runSpecificValues(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs, addedMemory int) {
 	for input.Scan() {
 		_ = <-workTokens
 		tm := parseTM(input.Text())
 		go func() {
-			MITMWFARdecider(tm, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs, printMode)
+			MITMWFARdecider(tm, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs, addedMemory, printMode)
 			workTokens <- struct{}{}
 		}()
 	}
 }
 
 //parsing isn't robust. Might panic on bad input.
-func runWeightedScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions, maxWeightPairs int) {
+func runWeightedScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions, maxWeightPairs, addedMemory int) {
 	for input.Scan() {
 		_ = <-workTokens
 		tm := parseTM(input.Text())
 		go func() {
 			for transitions := 2; transitions <= maxTransitions; transitions++ {
-				if MITMWFARdecider(tm, transitions, maxTransitions, maxTransitions, maxWeightPairs, printMode) {
+				if MITMWFARdecider(tm, transitions, maxTransitions, maxTransitions, maxWeightPairs, addedMemory, printMode) {
 					break
 				}
 			}
@@ -83,7 +83,7 @@ func runDFAScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxSt
 		go func() {
 			maxTransitions := tm.symbols * (maxStates - 1) * 2
 			for transitions := 2; transitions <= maxTransitions; transitions++ {
-				if MITMWFARdecider(tm, transitions, maxStates, maxStates, 0, printMode) {
+				if MITMWFARdecider(tm, transitions, maxStates, maxStates, 0, 0, printMode) {
 					break
 				}
 			}

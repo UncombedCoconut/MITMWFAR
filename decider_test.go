@@ -188,7 +188,7 @@ func TestMITMWFARdecider(t *testing.T) {
 				1: {0, L, E}},
 		},
 	}
-	if !MITMWFARdecider(tm, 9, 4, 4, 1, -1) {
+	if !MITMWFARdecider(tm, 9, 4, 4, 1, 0, -1) {
 		t.Fail()
 	}
 }
@@ -210,7 +210,7 @@ func TestMITMDFAdecider(t *testing.T) {
 					1: {0, L, A}},
 			},
 		}
-		if !MITMWFARdecider(tm, 9, 5, 5, 0, -1) {
+		if !MITMWFARdecider(tm, 9, 5, 5, 0, 0, -1) {
 			t.Fail()
 		}
 	})
@@ -230,8 +230,46 @@ func TestMITMDFAdecider(t *testing.T) {
 				E: {1: {0, R, A}},
 			},
 		}
-		if MITMWFARdecider(tm, 12, 4, 4, 0, -1) {
+		if MITMWFARdecider(tm, 12, 4, 4, 0, 0, -1) {
 			t.Fail()
 		}
 	})
+}
+
+func TestAddWFAMemory(t *testing.T) {
+	wfa := dwfa{
+		states:     3,
+		symbols:    2,
+		startState: 0,
+		transitions: map[wfaState]map[symbol]wfaTransition{
+			0: {0: {0, 0},
+				1: {2, 0}},
+			1: {0: {1, 0},
+				1: {1, 0}},
+			2: {0: {0, 1},
+				1: {1, 0}},
+		},
+	}
+	expectedResult := dwfa{
+		states:     4,
+		symbols:    2,
+		startState: 0,
+		transitions: map[wfaState]map[symbol]wfaTransition{
+			0: {0: {0, 0},
+				1: {2, 0}},
+			1: {0: {1, 0},
+				1: {1, 0}},
+			2: {0: {3, 1},
+				1: {1, 0}},
+			3: {0: {0, 0},
+				1: {2, 0}},
+		},
+	}
+
+	result := addWFAMemory(wfa)
+
+	if !reflect.DeepEqual(expectedResult, result) {
+		t.Fail()
+	}
+
 }

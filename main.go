@@ -17,6 +17,7 @@ func main() {
 	leftStates := flag.Int("l", 4, "maximum number of states in the left WFA")
 	rightStates := flag.Int("r", 4, "maximum number of states in the left WFA")
 	weightPairs := flag.Int("w", 1, "maximum number of weighted transitions in each WFA")
+	memory := flag.Int("m", 0, "memory added to each WFA")
 
 	//main modes
 	scan := flag.Int("n", 0, "scans up to this maximum number of non-dead transitions")
@@ -42,11 +43,11 @@ func main() {
 	case *shortcert:
 		parseShortCertificate(input, workTokens, *printMode)
 	case *scan > 0:
-		runWeightedScan(input, workTokens, *printMode, *scan, *weightPairs)
+		runWeightedScan(input, workTokens, *printMode, *scan, *weightPairs, *memory)
 	case *dfa > 0:
 		runDFAScan(input, workTokens, *printMode, *dfa)
 	default:
-		runSpecificValues(input, workTokens, *printMode, *transitions, *leftStates, *rightStates, *weightPairs)
+		runSpecificValues(input, workTokens, *printMode, *transitions, *leftStates, *rightStates, *weightPairs, *memory)
 	}
 
 	//make sure all the work is finished
