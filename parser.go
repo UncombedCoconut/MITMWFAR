@@ -2,25 +2,62 @@ package main
 
 import (
 	"bufio"
+	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
 
-//parsing isn't robust. Might panic on bad input.
 func parseFullCertificate(input *bufio.Scanner, workTokens chan struct{}, printMode int) {
 	for input.Scan() {
+		tm, err := parseTM(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
+		input.Scan()
+		leftWFA, err := parseWFA(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
+		input.Scan()
+		rightWFA, err := parseWFA(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
+		input.Scan()
+		leftSpecialSets, err := parseSpecialSets(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
+		input.Scan()
+		rightSpecialSets, err := parseSpecialSets(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
+		input.Scan()
+		acceptSet, err := parseAcceptSet(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
 		_ = <-workTokens
-		tm := parseTM(input.Text())
-		input.Scan()
-		leftWFA := parseWFA(input.Text())
-		input.Scan()
-		rightWFA := parseWFA(input.Text())
-		input.Scan()
-		leftSpecialSets := parseSpecialSets(input.Text())
-		input.Scan()
-		rightSpecialSets := parseSpecialSets(input.Text())
-		input.Scan()
-		acceptSet := parseAcceptSet(input.Text())
 		go func() {
 			MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, printMode)
 			workTokens <- struct{}{}
@@ -28,18 +65,35 @@ func parseFullCertificate(input *bufio.Scanner, workTokens chan struct{}, printM
 	}
 }
 
-//parsing isn't robust. Might panic on bad input.
 func parseShortCertificate(input *bufio.Scanner, workTokens chan struct{}, printMode int) {
 	for input.Scan() {
-		_ = <-workTokens
-		tm := parseTM(input.Text())
+		tm, err := parseTM(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
 		input.Scan()
-		leftWFA := parseWFA(input.Text())
+		leftWFA, err := parseWFA(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
 		input.Scan()
-		rightWFA := parseWFA(input.Text())
+		rightWFA, err := parseWFA(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
 		leftSpecialSets := deriveSpecialSets(leftWFA)
 		rightSpecialSets := deriveSpecialSets(rightWFA)
 		acceptSet := findAcceptSet(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets)
+		_ = <-workTokens
 		go func() {
 			MITMWFARverifier(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet, printMode)
 			workTokens <- struct{}{}
@@ -47,11 +101,16 @@ func parseShortCertificate(input *bufio.Scanner, workTokens chan struct{}, print
 	}
 }
 
-//parsing isn't robust. Might panic on bad input.
 func runSpecificValues(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs, addedMemory int) {
 	for input.Scan() {
+		tm, err := parseTM(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
 		_ = <-workTokens
-		tm := parseTM(input.Text())
 		go func() {
 			MITMWFARdecider(tm, maxTransitions, maxLeftStates, maxRightStates, maxWeightPairs, addedMemory, printMode)
 			workTokens <- struct{}{}
@@ -59,11 +118,16 @@ func runSpecificValues(input *bufio.Scanner, workTokens chan struct{}, printMode
 	}
 }
 
-//parsing isn't robust. Might panic on bad input.
 func runWeightedScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxTransitions, maxWeightPairs, addedMemory int) {
 	for input.Scan() {
+		tm, err := parseTM(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
 		_ = <-workTokens
-		tm := parseTM(input.Text())
 		go func() {
 			for transitions := 2; transitions <= maxTransitions; transitions++ {
 				if MITMWFARdecider(tm, transitions, maxTransitions, maxTransitions, maxWeightPairs, addedMemory, printMode) {
@@ -75,11 +139,16 @@ func runWeightedScan(input *bufio.Scanner, workTokens chan struct{}, printMode, 
 	}
 }
 
-//parsing isn't robust. Might panic on bad input.
 func runDFAScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxStates int) {
 	for input.Scan() {
+		tm, err := parseTM(input.Text())
+		if err != nil {
+			if input.Text() != "" {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			continue
+		}
 		_ = <-workTokens
-		tm := parseTM(input.Text())
 		go func() {
 			maxTransitions := tm.symbols * (maxStates - 1) * 2
 			for transitions := 2; transitions <= maxTransitions; transitions++ {
@@ -92,16 +161,36 @@ func runDFAScan(input *bufio.Scanner, workTokens chan struct{}, printMode, maxSt
 	}
 }
 
-//standard text format
-func parseTM(s string) turingMachine {
-	stateStrings := strings.Split(s, "_")
+type errorString string
 
-	tm := turingMachine{
+func (e errorString) Error() string {
+	return string(e)
+}
+
+//standard text format
+func parseTM(s string) (tm turingMachine, err error) {
+	defer func() {
+		if recover() != nil {
+			err = errorString("Couldn't parse TM: \"" + s + "\"")
+		}
+	}()
+
+	stateStrings := strings.Split(s, "_")
+	if len(stateStrings[0])%3 != 0 {
+		panic("")
+	}
+	tm = turingMachine{
 		states:      len(stateStrings),
 		symbols:     len(stateStrings[0]) / 3,
 		transitions: map[tmState]map[symbol]tmTransition{},
 	}
+	if tm.states < 2 {
+		panic("")
+	}
 	for i, stateString := range stateStrings {
+		if len(stateString) != tm.symbols*3 {
+			panic("")
+		}
 		tm.transitions[tmState(i)] = map[symbol]tmTransition{}
 		for j := 0; len(stateString) >= 3; j++ {
 			symbolString := stateString[:3]
@@ -111,6 +200,9 @@ func parseTM(s string) turingMachine {
 				continue
 			}
 			newSymbol := symbol(symbolString[0] - '0')
+			if newSymbol < 0 || int(newSymbol) >= tm.symbols {
+				panic("")
+			}
 			newDirection := L
 			if symbolString[1] == 'R' {
 				newDirection = R
@@ -118,13 +210,18 @@ func parseTM(s string) turingMachine {
 			tm.transitions[tmState(i)][symbol(j)] = tmTransition{newSymbol, newDirection, newTMState}
 		}
 	}
-	return tm
+	return
 }
 
 //"0,0;1,0_1,1;0,0"
-func parseWFA(s string) dwfa {
+func parseWFA(s string) (wfa dwfa, err error) {
+	defer func() {
+		if recover() != nil {
+			err = errorString("Couldn't parse WFA: \"" + s + "\"")
+		}
+	}()
 	stateStrings := strings.Split(s, "_")
-	wfa := dwfa{
+	wfa = dwfa{
 		states:      len(stateStrings),
 		startState:  0,
 		transitions: map[wfaState]map[symbol]wfaTransition{},
@@ -143,16 +240,22 @@ func parseWFA(s string) dwfa {
 			}
 		}
 	}
-	return wfa
+	return
 }
 
 //"0,1,4,5_0,2"
-func parseSpecialSets(s string) specialSets {
+func parseSpecialSets(s string) (sets specialSets, err error) {
+	defer func() {
+		if recover() != nil {
+			err = errorString("Couldn't parse special sets: \"" + s + "\"")
+		}
+	}()
 	setStrings := strings.Split(s, "_")
-	return specialSets{
+	sets = specialSets{
 		nonNegative: parseStateSet(setStrings[0]),
 		nonPositive: parseStateSet(setStrings[1]),
 	}
+	return
 }
 
 func parseStateSet(s string) set[wfaState] {
@@ -168,8 +271,13 @@ func parseStateSet(s string) set[wfaState] {
 }
 
 //"A,0,0,0,-,-_B,1,0,2,2,-"
-func parseAcceptSet(s string) acceptSet {
-	acceptSet := acceptSet{}
+func parseAcceptSet(s string) (set acceptSet, err error) {
+	defer func() {
+		if recover() != nil {
+			err = errorString("Couldn't parse accept set: \"" + s + "\"")
+		}
+	}()
+	set = acceptSet{}
 	for _, accepter := range strings.Split(s, "_") {
 		values := strings.Split(accepter, ",")
 		newTMState := tmState(values[0][0] - 'A')
@@ -186,7 +294,7 @@ func parseAcceptSet(s string) acceptSet {
 		if upperExists == nil {
 			newBounds[UPPER] = weight(upperbound)
 		}
-		acceptSet[newConfig] = newBounds
+		set[newConfig] = newBounds
 	}
-	return acceptSet
+	return
 }
