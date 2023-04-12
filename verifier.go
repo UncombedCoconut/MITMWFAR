@@ -290,17 +290,13 @@ func nextConfigWithWeightChangeIsAccepted(nextConfigWithWeightChange configWithW
 	}
 
 	//adjust bounds according to the special sets
-	_, leftStateNonNegative := leftSpecialSets.nonNegative[nextConfig.leftState]
-	_, rightStateNonNegative := rightSpecialSets.nonNegative[nextConfig.rightState]
-	if leftStateNonNegative && rightStateNonNegative {
+	if leftSpecialSets.nonNegative.contains(nextConfig.leftState) && rightSpecialSets.nonNegative.contains(nextConfig.rightState) {
 		if !lowerExists || lowerbound < 0 {
 			lowerExists = true
 			lowerbound = 0
 		}
 	}
-	_, leftStateNonPositive := leftSpecialSets.nonPositive[nextConfig.leftState]
-	_, rightStateNonPositive := rightSpecialSets.nonPositive[nextConfig.rightState]
-	if leftStateNonPositive && rightStateNonPositive {
+	if leftSpecialSets.nonPositive.contains(nextConfig.leftState) && rightSpecialSets.nonPositive.contains(nextConfig.rightState) {
 		if !upperExists || upperbound > 0 {
 			upperExists = true
 			upperbound = 0

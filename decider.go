@@ -5,13 +5,6 @@ import (
 	"sort"
 )
 
-func ShortCertCompletion(tm turingMachine, leftWFA, rightWFA dwfa) (turingMachine, dwfa, dwfa, specialSets, specialSets, acceptSet) {
-	leftSpecialSets := deriveSpecialSets(leftWFA)
-	rightSpecialSets := deriveSpecialSets(rightWFA)
-	acceptSet := findAcceptSet(tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets)
-	return tm, leftWFA, rightWFA, leftSpecialSets, rightSpecialSets, acceptSet
-}
-
 func deriveSpecialSets(wfa dwfa) specialSets {
 	possibleNegative := set[wfaState]{}
 	possiblePositive := set[wfaState]{}
@@ -108,9 +101,7 @@ func changeAcceptSetToContainNextConfigWithWeightChange(nextConfigWithWeightChan
 
 	hardLower := false
 	//adjust bounds according to the special sets
-	_, leftStateNonNegative := leftSpecialSets.nonNegative[nextConfig.leftState]
-	_, rightStateNonNegative := rightSpecialSets.nonNegative[nextConfig.rightState]
-	if leftStateNonNegative && rightStateNonNegative {
+	if leftSpecialSets.nonNegative.contains(nextConfig.leftState) && rightSpecialSets.nonNegative.contains(nextConfig.rightState) {
 		hardLower = true
 		if !lowerExists || lowerbound < 0 {
 			lowerExists = true
@@ -118,9 +109,7 @@ func changeAcceptSetToContainNextConfigWithWeightChange(nextConfigWithWeightChan
 		}
 	}
 	hardUpper := false
-	_, leftStateNonPositive := leftSpecialSets.nonPositive[nextConfig.leftState]
-	_, rightStateNonPositive := rightSpecialSets.nonPositive[nextConfig.rightState]
-	if leftStateNonPositive && rightStateNonPositive {
+	if leftSpecialSets.nonPositive.contains(nextConfig.leftState) && rightSpecialSets.nonPositive.contains(nextConfig.rightState) {
 		hardUpper = true
 		if !upperExists || upperbound > 0 {
 			upperExists = true
