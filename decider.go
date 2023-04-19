@@ -131,7 +131,7 @@ func changeAcceptSetToContainNextConfigWithWeightChange(nextConfigWithWeightChan
 	return ChangeAcceptSetToCountainConfigBounds(acceptSet, nextConfig, nextBounds, hardLower, hardUpper)
 }
 
-const MAXFINITEINTERVALL = 10
+const MAXFINITEINTERVALL = 1000
 
 func ChangeAcceptSetToCountainConfigBounds(acceptSet acceptSet, nextConfig config, nextBounds map[boundType]weight, hardLower, hardUpper bool) bool {
 	acceptBounds, ok := acceptSet[nextConfig]
