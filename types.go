@@ -127,6 +127,9 @@ func copyWFA(oldWFA dwfa) dwfa {
 }
 
 func (wfa dwfa) String() string {
+	if wfa.states == 0 {
+		return ""
+	}
 	result := "_"
 	for i := 0; i < wfa.states; i++ {
 		for j := 0; j < wfa.symbols; j++ {
@@ -143,6 +146,9 @@ func (wfa dwfa) String() string {
 }
 
 func (tm turingMachine) String() string {
+	if tm.states == 0 {
+		return ""
+	}
 	result := ""
 	for i := 0; i < tm.states; i++ {
 		result += "_"
@@ -159,6 +165,9 @@ func (tm turingMachine) String() string {
 }
 
 func (s set[T]) String() string {
+	if len(s) == 0 {
+		return ""
+	}
 	result := ""
 	for elem := range s {
 		result += fmt.Sprintf(",%v", elem)
@@ -171,6 +180,9 @@ func (s specialSets) String() string {
 }
 
 func (as acceptSet) String() string {
+	if len(as) == 0 {
+		return ""
+	}
 	result := ""
 	for config, bounds := range as {
 		result += fmt.Sprintf("_%v", config)
